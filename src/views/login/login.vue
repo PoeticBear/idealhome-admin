@@ -4,7 +4,7 @@
     <div class="view-account-container">
       <div class="view-account-top">
         <div class="view-account-top-logo">
-          <img src="@/assets/img/login/logo.png" alt="" />
+          <img src="@/assets/img/login/logo-no-txt.png" alt="" />
         </div>
         <div class="view-account-top-desc">
           {{ title }}
