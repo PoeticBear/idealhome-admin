@@ -64,8 +64,20 @@ const onItemClick = (data: any) => {
     showData.headImg = data.headImg
     showData.info = [
       {
-        label: '价格：',
+        label: '预期租金：',
         value: data.price,
+      },
+      {
+        label: '房号：',
+        value: data.roomNumber,
+      },
+      {
+        label: '户型：',
+        value: data.houseType,
+      },
+      {
+        label: '采光：',
+        value: data.lighting,
       },
       {
         label: '省市区：',

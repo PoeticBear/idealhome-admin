@@ -19,7 +19,6 @@ import {
 import Chart from './chart/index.vue';
 import headForm from './headForm/headForm.vue'
 import headFormItem from './headForm/headFormItem.vue'
-import PaymentStatusTag from './PaymentStatusTag.vue'
 
 use([
   CanvasRenderer,
@@ -41,6 +40,5 @@ export default {
     Vue.component('Chart', Chart);
     Vue.component('HeadForm', headForm);
     Vue.component('HeadFormItem', headFormItem);
-    Vue.component('PaymentStatusTag', PaymentStatusTag);
   }
 };

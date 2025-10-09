@@ -21,15 +21,7 @@
         >
         </a-select>
       </headFormItem>
-      <headFormItem label="缴费状态：">
-        <a-select
-          v-model="searchData.paymentStatus" placeholder="请选择 ..." :options="paymentStatusOption"
-          allow-clear
-          @change="searchList"
-        >
-        </a-select>
-      </headFormItem>
-      <headFormItem label="创建时间：">
+        <headFormItem label="创建时间：">
         <a-range-picker
           show-time
           @change="datePickerChange"
@@ -59,12 +51,7 @@
           未知
         </a-tag>
       </template>
-      <template #paymentStatus="{ record }">
-        <a-tag :color="paymentStatusOption.find(item => item.value === record.paymentStatus)?.color">
-          {{ paymentStatusOption.find(item => item.value === record.paymentStatus)?.label || '未知' }}
-        </a-tag>
-      </template>
-      <template #status="{ record }">
+        <template #status="{ record }">
         <a-tag :color="statusOption.find(item => item.value === record.status)?.color">
           {{ statusOption.find(item => item.value === record.status)?.label || '未知' }}
         </a-tag>
@@ -77,10 +64,7 @@
             </template>
           </a-button>
           <template #content>
-            <a-doption @click="viewPaymentRecords(record)">
-              查看缴费记录
-            </a-doption>
-            <a-doption v-if="record.status === 1" @click="editUser(record, 2)">
+              <a-doption v-if="record.status === 1" @click="editUser(record, 2)">
               停用
             </a-doption>
             <a-doption v-if="record.status === 2" @click="editUser(record, 1)">
@@ -99,8 +83,6 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { tenantsListUser, updateLandlordUserStatus } from '@/api/tenantsUser';
-import { getPaymentStatus } from '@/api/tenantsPayment';
-import { formatAmount } from '@/utils/amountUtils';
 import useStore from '@/stores/index';
 import { storeToRefs } from 'pinia'
 import { Modal, Message } from '@arco-design/web-vue';
@@ -136,13 +118,7 @@ const tableColumns: object[] = reactive([
     dataIndex: 'sourceType',
     slotName: 'sourceType'
   },
-  {
-    title: '缴费状态',
-    align: 'center',
-    slotName: 'paymentStatus',
-    dataIndex: 'paymentStatus'
-  },
-  {
+    {
     title: '状态',
     align: 'center',
     slotName: 'status',
@@ -183,40 +159,12 @@ const statusOption = reactive([
   }
 ])
 
-const paymentStatusOption = reactive([
-  {
-    label: '全部',
-    value: '',
-    color: ''
-  },
-  {
-    label: '未缴费',
-    value: 0,
-    color: 'gray'
-  },
-  {
-    label: '已缴费',
-    value: 1,
-    color: 'green'
-  },
-  {
-    label: '欠费',
-    value: 2,
-    color: 'red'
-  },
-  {
-    label: '部分缴费',
-    value: 3,
-    color: 'orange'
-  }
-])
 
 const searchData = reactive({
   name: '',
   phone: '',
   status: '',
-  paymentStatus: '',
-  starTime: '',
+    starTime: '',
   endTime: '',
   size: pagination.pageSize,
   index: pagination.current
@@ -289,10 +237,6 @@ const editUser = (data: any, status: number) => {
   });
 }
 
-const viewPaymentRecords = (record: any) => {
-  // 跳转到缴费记录页面，并传递租客ID
-  router.push(`/tenants/paymentRecords?tenantId=${record.id}&tenantName=${record.name}`)
-}
 </script>
 
 <style lang="scss">

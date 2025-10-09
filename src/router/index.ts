@@ -62,27 +62,6 @@ export const routes = [
     ]
   },
   {
-    path: '/market',
-    name: 'market',
-    component: () => import('@/layout/index.vue'),
-    redirect: '/market/market',
-    meta: {
-      icon: 'icon-bulb',
-      title: '租房市场',
-      hideInMenu: true
-    },
-    children: [
-      {
-        path: 'market',
-        name: 'marketChild',
-        component: () => import('@/views/house/market.vue'),
-        meta: {
-          title: '租房市场'
-        }
-      }
-    ]
-  },
-  {
     path: '/tenantsList',
     name: 'tenantsList',
     component: () => import('@/layout/index.vue'),
@@ -98,46 +77,6 @@ export const routes = [
         component: () => import('@/views/tenants/tenantsList.vue'),
         meta: {
           title: '租客列表'
-        }
-      }
-    ]
-  },
-  {
-    path: '/houseListMaintenance',
-    name: 'houseListMaintenance',
-    component: () => import('@/layout/index.vue'),
-    redirect: '/houseListMaintenance/houseListMaintenance',
-    meta: {
-      icon: 'icon-tool',
-      title: '房屋报修'
-    },
-    children: [
-      {
-        path: 'houseListMaintenance',
-        name: 'houseListMaintenanceChild',
-        component: () => import('@/views/house/houseListMaintenance.vue'),
-        meta: {
-          title: '房屋报修'
-        }
-      }
-    ]
-  },
-  {
-    path: '/overdueList',
-    name: 'overdueList',
-    component: () => import('@/layout/index.vue'),
-    redirect: '/overdueList/overdueList',
-    meta: {
-      icon: 'icon-exclamation-circle',
-      title: '欠费管理'
-    },
-    children: [
-      {
-        path: 'overdueList',
-        name: 'overdueListChild',
-        component: () => import('@/views/tenants/overdueList.vue'),
-        meta: {
-          title: '欠费管理'
         }
       }
     ]
