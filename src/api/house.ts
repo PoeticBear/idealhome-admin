@@ -5,7 +5,3 @@ export const getHouseList = (params: any) => axios({
   method: 'get',
   params
 })
-export const getHouseStatistics = () => axios({
-  url: '/api/house/statistics',
-  method: 'get'
-})

@@ -1,6 +1,7 @@
 <template>
   <div>
-    <headForm :label-width="100">
+    <!-- 搜索筛选区域已隐藏 -->
+    <headForm :label-width="100" style="display: none;">
       <headFormItem label="房屋名称：">
         <a-input
           v-model="searchData.name" placeholder="请输入..." allow-clear
@@ -31,48 +32,6 @@
       </headFormItem>
     </headForm>
 
-    <!-- 统计数据区域 -->
-    <div class="statistics-container">
-      <a-row :gutter="16">
-        <a-col :xs="12" :sm="6" :lg="6" :xl="6" :xxl="6">
-          <a-card class="statistics-card">
-            <a-statistic title="总房屋数" :value="statisticsData.totalHouses" :value-style="{ color: '#165DFF' }">
-              <template #prefix>
-                <icon-home />
-              </template>
-            </a-statistic>
-          </a-card>
-        </a-col>
-        <a-col :xs="12" :sm="6" :lg="6" :xl="6" :xxl="6">
-          <a-card class="statistics-card">
-            <a-statistic title="已出租" :value="statisticsData.rentedHouses" :value-style="{ color: '#00B42A' }">
-              <template #prefix>
-                <icon-check-circle />
-              </template>
-            </a-statistic>
-          </a-card>
-        </a-col>
-        <a-col :xs="12" :sm="6" :lg="6" :xl="6" :xxl="6">
-          <a-card class="statistics-card">
-            <a-statistic title="待出租" :value="statisticsData.availableHouses" :value-style="{ color: '#F53F3F' }">
-              <template #prefix>
-                <icon-exclamation-circle />
-              </template>
-            </a-statistic>
-          </a-card>
-        </a-col>
-        <a-col :xs="12" :sm="6" :lg="6" :xl="6" :xxl="6">
-          <a-card class="statistics-card">
-            <a-statistic title="出租率" :value="statisticsData.rentalRate" suffix="%" :value-style="{ color: '#FF7D00' }">
-              <template #prefix>
-                <icon-chart-pie />
-              </template>
-            </a-statistic>
-          </a-card>
-        </a-col>
-      </a-row>
-    </div>
-
     <a-table
       :columns="tableColumns" :loading="tableLoading" stripe
       show-page-size :pagination="pagination"
@@ -96,113 +55,219 @@
     </a-table>
     <a-modal
       v-model:visible="showInfoModel" :title="showData.name" title-align="start"
-      width="50%"
+      width="90%"
     >
-      <a-space
-        direction="vertical" size="medium" fill
-      >
-        <a-descriptions
-          size="mini" bordered align="right"
-          :data="showData.info" title="租赁信息" :column="2"
-          layout="inline-horizontal"
-        >
-          <template #value="{data}">
-            <template v-if="data.label==='朝向：'">
-              <a-tag v-if="data.value===1" color="red">
-                东
-              </a-tag>
-              <a-tag v-if="data.value===2" color="orangered">
-                西
-              </a-tag>
-              <a-tag v-if="data.value===3" color="blue">
-                南
-              </a-tag>
-              <a-tag v-if="data.value===4" color="gray">
-                北
-              </a-tag>
-            </template>
-            <template v-else-if="data.label==='户型：'">
-              <a-tag color="purple">
-                {{ getHouseTypeLabel(data.value) }}
-              </a-tag>
-            </template>
-            <template v-else-if="data.label==='阳台：'">
-              <a-tag v-if="data.value===1" color="green">
-                有
-              </a-tag>
-              <a-tag v-else color="red">
-                无
-              </a-tag>
-            </template>
-            <p v-else>
-              {{ data.value }}
-            </p>
-          </template>
-        </a-descriptions>
-        <div v-if="showData.tenantsUsers?.length>0">
-          <p class="list-title">
-            租客
-          </p>
-          <a-list>
-            <a-list-item v-for="(item,ind) in showData.tenantsUsers" :key="ind">
-              <a-list-item-meta
-                :title="`${item.name}（${item.phone}）`"
-                :description="`入住日期：${item.joinTime}`"
-              >
-                <template #avatar>
-                  <a-avatar :image-url="item.headImg">
-                  </a-avatar>
+      <a-space direction="vertical" size="small" fill>
+        <!-- 主要信息：左右两列布局 -->
+        <a-row :gutter="16">
+          <!-- 左列 -->
+          <a-col :span="12">
+            <a-space direction="vertical" size="small" fill>
+              <!-- 基本信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-home /> 基本信息
                 </template>
-              </a-list-item-meta>
-            </a-list-item>
-          </a-list>
-        </div>
-        <a-image-preview-group infinite>
-          <p class="list-title">
-            房屋图片
-          </p>
-          <a-row :gutter="10" align="stretch">
-            <a-col
-              v-for="(item, ind) in showData.headImg" :key="ind" class="mb20"
-              :xs="12" :sm="6" :lg="6"
-              :xl="4" :xxl="4"
-            >
-              <a-image
-                fit="cover" :src="item.url" width="100%"
-                height="100%"
-              />
-            </a-col>
-          </a-row>
-        </a-image-preview-group>
-
-        <!-- 房间视频部分 -->
-        <div v-if="showData.videoUrl?.length>0">
-          <p class="list-title">
-            房间视频
-          </p>
-          <a-row :gutter="10" align="stretch">
-            <a-col
-              v-for="(item, ind) in showData.videoUrl" :key="ind" class="mb20"
-              :xs="24" :sm="12" :lg="12"
-              :xl="8" :xxl="8"
-            >
-              <div class="video-container">
-                <video
-                  :src="item.url"
-                  controls
-                  preload="metadata"
-                  style="width: 100%; height: 200px; object-fit: cover;"
+                <a-descriptions
+                  size="mini" :column="3"
+                  :data="showData.basicInfo"
+                  layout="inline-horizontal"
                 >
-                  您的浏览器不支持视频播放
-                </video>
-                <div class="video-actions">
-                  <a-button type="text" size="mini" @click="openVideo(item.url)">
-                    <icon-play-circle /> 播放
-                  </a-button>
-                </div>
+                  <template #value="{data}">
+                    <template v-if="data.label==='户型：'">
+                      <a-tag color="purple" size="small">
+                        {{ getHouseTypeLabel(data.value) }}
+                      </a-tag>
+                    </template>
+                    <span v-else class="compact-text">
+                      {{ data.value || '-' }}
+                    </span>
+                  </template>
+                </a-descriptions>
+              </a-card>
+
+              <!-- 位置信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-location /> 位置信息
+                </template>
+                <a-descriptions
+                  size="mini" :column="2"
+                  :data="showData.locationInfo"
+                  layout="inline-horizontal"
+                >
+                  <template #value="{data}">
+                    <span class="compact-text">
+                      {{ data.value || '-' }}
+                    </span>
+                  </template>
+                </a-descriptions>
+              </a-card>
+
+              <!-- 设施配置 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-settings /> 设施配置
+                </template>
+                <a-descriptions
+                  size="mini" :column="3"
+                  :data="showData.facilityInfo"
+                  layout="inline-horizontal"
+                >
+                  <template #value="{data}">
+                    <template v-if="data.label==='朝向：'">
+                      <a-tag v-if="data.value===1" color="red" size="small">东</a-tag>
+                      <a-tag v-else-if="data.value===2" color="orangered" size="small">西</a-tag>
+                      <a-tag v-else-if="data.value===3" color="blue" size="small">南</a-tag>
+                      <a-tag v-else-if="data.value===4" color="gray" size="small">北</a-tag>
+                      <span v-else>-</span>
+                    </template>
+                    <template v-else-if="data.label==='卫生间：' || data.label==='厨房：'">
+                      <a-tag v-if="data.value===0" color="red" size="small">没有</a-tag>
+                      <a-tag v-else-if="data.value===1" color="green" size="small">独立</a-tag>
+                      <a-tag v-else-if="data.value===2" color="orange" size="small">公用</a-tag>
+                      <span v-else>-</span>
+                    </template>
+                    <template v-else-if="data.label==='阳台：'">
+                      <a-tag v-if="data.value===1" color="green" size="small">有</a-tag>
+                      <a-tag v-else color="red" size="small">无</a-tag>
+                    </template>
+                    <span v-else class="compact-text">
+                      {{ data.value || '-' }}
+                    </span>
+                  </template>
+                </a-descriptions>
+              </a-card>
+            </a-space>
+          </a-col>
+
+          <!-- 右列 -->
+          <a-col :span="12">
+            <a-space direction="vertical" size="small" fill>
+              <!-- 费用信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-money-circle /> 费用信息
+                </template>
+                <a-descriptions
+                  size="mini" :column="3"
+                  :data="showData.costInfo"
+                  layout="inline-horizontal"
+                >
+                  <template #value="{data}">
+                    <template v-if="data.label==='实际租金：' || data.label==='对外租金：'">
+                      <span class="price-text compact">{{ data.value ? `¥${data.value}/月` : '-' }}</span>
+                    </template>
+                    <template v-else-if="data.label==='押金月数：'">
+                      <span class="compact-text">{{ data.value ? `${data.value}个月` : '-' }}</span>
+                    </template>
+                    <template v-else-if="data.label==='每次付月数：'">
+                      <span class="compact-text">{{ data.value ? `每${data.value}个月付一次` : '-' }}</span>
+                    </template>
+                    <template v-else>
+                      <span class="compact-text">{{ data.value ? `¥${data.value}` : '-' }}</span>
+                    </template>
+                  </template>
+                </a-descriptions>
+              </a-card>
+
+              <!-- 其他信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-info-circle /> 其他信息
+                </template>
+                <a-descriptions
+                  size="mini" :column="1"
+                  :data="showData.otherInfo"
+                  layout="inline-horizontal"
+                >
+                  <template #value="{data}">
+                    <span class="compact-text">
+                      {{ data.value || '-' }}
+                    </span>
+                  </template>
+                </a-descriptions>
+              </a-card>
+
+              <!-- 租客信息 -->
+              <div v-if="showData.tenantsUsers?.length>0">
+                <a-card :bordered="false" class="info-section compact">
+                  <template #title>
+                    <icon-user /> 租客信息
+                  </template>
+                  <a-list :bordered="false" size="small">
+                    <a-list-item v-for="(item,ind) in showData.tenantsUsers" :key="ind">
+                      <a-list-item-meta
+                        :title="`${item.name}（${item.phone}）`"
+                        :description="`入住日期：${item.joinTime}`"
+                      >
+                        <template #avatar>
+                          <a-avatar :image-url="item.headImg" :size="32">
+                          </a-avatar>
+                        </template>
+                      </a-list-item-meta>
+                    </a-list-item>
+                  </a-list>
+                </a-card>
               </div>
-            </a-col>
-          </a-row>
+            </a-space>
+          </a-col>
+        </a-row>
+
+        <!-- 媒体资源区域：图片视频同行显示 -->
+        <div v-if="showData.headImg?.length>0 || showData.videoUrl?.length>0">
+          <a-card :bordered="false" class="info-section compact media-section">
+            <template #title>
+              <icon-image /> 媒体资源
+            </template>
+            <a-row :gutter="16">
+              <!-- 房屋图片 -->
+              <a-col v-if="showData.headImg?.length>0" :span="showData.videoUrl?.length>0 ? 16 : 24">
+                <div class="media-subtitle">房屋图片</div>
+                <a-image-preview-group infinite>
+                  <a-row :gutter="8">
+                    <a-col
+                      v-for="(item, ind) in showData.headImg.slice(0, 8)" :key="ind"
+                      :span="6"
+                    >
+                      <a-image
+                        fit="cover" :src="item.url"
+                        width="100%" height="70px"
+                        class="media-image"
+                      />
+                    </a-col>
+                    <a-col v-if="showData.headImg.length > 8" :span="6">
+                      <div class="more-images">
+                        +{{ showData.headImg.length - 8 }}
+                      </div>
+                    </a-col>
+                  </a-row>
+                </a-image-preview-group>
+              </a-col>
+
+              <!-- 房间视频 -->
+              <a-col v-if="showData.videoUrl?.length>0" :span="showData.headImg?.length>0 ? 8 : 24">
+                <div class="media-subtitle">房间视频</div>
+                <a-row :gutter="8">
+                  <a-col
+                    v-for="(item, ind) in showData.videoUrl.slice(0, 2)" :key="ind"
+                    :span="12"
+                  >
+                    <div class="video-container compact">
+                      <video
+                        :src="item.url"
+                        controls
+                        preload="metadata"
+                        style="width: 100%; height: 70px; object-fit: cover;"
+                      >
+                        您的浏览器不支持视频播放
+                      </video>
+                    </div>
+                  </a-col>
+                </a-row>
+              </a-col>
+            </a-row>
+          </a-card>
         </div>
       </a-space>
     </a-modal>
@@ -213,8 +278,7 @@ import { ref, reactive } from 'vue';
 import useStore from '@/stores/index';
 import { storeToRefs } from 'pinia'
 import {
-  getHouseList,
-  getHouseStatistics
+  getHouseList
 } from '@/api/house';
 
 const store = storeToRefs(useStore());
@@ -319,33 +383,30 @@ const getHouseTypeLabel = (value: number) => {
   return option ? option.label : '未知';
 };
 
-// 统计数据
-const statisticsData = reactive({
-  totalHouses: 0,
-  rentedHouses: 0,
-  availableHouses: 0,
-  rentalRate: 0
-});
-
-// 获取统计数据
-const getStatisticsData = () => {
-  getHouseStatistics()
-    .then(({ status, data }) => {
-      if (status === 1 && data) {
-        statisticsData.totalHouses = Number(data.totalHouses) || 0;
-        statisticsData.rentedHouses = Number(data.rentedHouses) || 0;
-        statisticsData.availableHouses = Number(data.availableHouses) || 0;
-        statisticsData.rentalRate = Number(data.rentalRate) || 0;
-      }
-    })
-    .catch(() => {
-      // 如果接口不存在，使用模拟数据
-      statisticsData.totalHouses = 0;
-      statisticsData.rentedHouses = 0;
-      statisticsData.availableHouses = 0;
-      statisticsData.rentalRate = 0;
-    });
+// 获取卫生间/厨房配置标签
+const getFacilityLabel = (value: number, type: 'toilet' | 'kitchen') => {
+  if (value === 0) return '没有';
+  if (value === 1) return '独立';
+  if (value === 2) return '公用';
+  return '未知';
 };
+
+// 获取朝向标签
+const getTowardLabel = (value: number) => {
+  const directionMap: { [key: number]: string } = {
+    1: '东',
+    2: '西',
+    3: '南',
+    4: '北'
+  };
+  return directionMap[value] || '未知';
+};
+
+// 获取阳台标签
+const getBalconyLabel = (value: number) => {
+  return value === 1 ? '有' : '无';
+};
+
 
 const getHouseListFun = () => {
   tableLoading.value = true;
@@ -362,7 +423,6 @@ const getHouseListFun = () => {
 };
 
 getHouseListFun();
-getStatisticsData();
 
 const onPageChange = (index: number) => {
   pagination.current = index;
@@ -398,34 +458,68 @@ let showData: any = reactive({});
 
 const showInfo = (data: any) => {
   showData.name = data.name;
-  showData.info = [
+
+  // 基本信息
+  showData.basicInfo = [
     {
-      label: '预期租金：',
-      value: data.price,
+      label: '房屋名称：',
+      value: data.name,
     },
     {
       label: '房号：',
       value: data.roomNumber,
     },
     {
-      label: '户型：',
-      value: data.houseType,
-    },
-    {
-      label: '采光：',
-      value: data.lighting,
+      label: '面积：',
+      value: data.area ? `${data.area}㎡` : null,
     },
     {
       label: '楼层：',
       value: data.floor,
     },
     {
-      label: '朝向：',
-      value: data.toward,
+      label: '户型：',
+      value: data.layoutType,
+    },
+  ];
+
+  // 位置信息
+  showData.locationInfo = [
+    {
+      label: '省份：',
+      value: data.provinceName,
     },
     {
-      label: '阳台：',
-      value: data.balcony,
+      label: '城市：',
+      value: data.cityName === '直辖市' ? data.provinceName : data.cityName,
+    },
+    {
+      label: '区域：',
+      value: data.areaName,
+    },
+    {
+      label: '详细地址：',
+      value: data.addresInfo,
+    },
+  ];
+
+  // 费用信息
+  showData.costInfo = [
+    {
+      label: '实际租金：',
+      value: data.price,
+    },
+    {
+      label: '对外租金：',
+      value: data.fakePrice,
+    },
+    {
+      label: '押金月数：',
+      value: data.depositNumber,
+    },
+    {
+      label: '每次付月数：',
+      value: data.priceNumber,
     },
     {
       label: '水费：',
@@ -443,9 +537,45 @@ const showInfo = (data: any) => {
       label: '燃气费：',
       value: data.fuelFee,
     },
+  ];
+
+  // 设施配置
+  showData.facilityInfo = [
     {
-      label: '备注：',
+      label: '卫生间：',
+      value: data.toilet,
+    },
+    {
+      label: '厨房：',
+      value: data.kitchen,
+    },
+    {
+      label: '阳台：',
+      value: data.balcony,
+    },
+    {
+      label: '朝向：',
+      value: data.toward,
+    },
+    {
+      label: '采光情况：',
+      value: data.lighting,
+    },
+  ];
+
+  // 其他信息
+  showData.otherInfo = [
+    {
+      label: '备注信息：',
       value: data.note,
+    },
+    {
+      label: '创建时间：',
+      value: data.createdAt,
+    },
+    {
+      label: '更新时间：',
+      value: data.updatedAt,
     },
   ];
 
@@ -516,29 +646,91 @@ const openVideo = (url: string) => {
 };
 </script>
 <style scoped lang="scss">
-.list-title{
-  color: var(--color-text-1);
-  margin-bottom: 6px;
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 1.5715;
+// 紧凑型信息区域样式
+.info-section {
+  margin-bottom: 8px;
+
+  &.compact {
+    :deep(.arco-card-header) {
+      border-bottom: 1px solid var(--color-border-2);
+      padding: 8px 12px;
+      min-height: auto;
+
+      .arco-card-header-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text-1);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+
+    :deep(.arco-card-body) {
+      padding: 8px 12px;
+    }
+  }
+
+  :deep(.arco-card-header) {
+    border-bottom: 1px solid var(--color-border-2);
+    padding: 12px 16px;
+
+    .arco-card-header-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  :deep(.arco-card-body) {
+    padding: 16px;
+  }
 }
 
+// 紧凑文本样式
+.compact-text {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+// 价格文本样式
+.price-text {
+  font-weight: 600;
+  color: var(--color-primary-6);
+  font-size: 14px;
+
+  &.compact {
+    font-size: 13px;
+  }
+}
+
+// 视频容器样式
 .video-container {
   position: relative;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 
+  &.compact {
+    border-radius: 4px;
+  }
+
   &:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
   }
 
   video {
     display: block;
-    border-radius: 8px;
+    border-radius: 6px;
+
+    .compact & {
+      border-radius: 4px;
+    }
   }
 
   .video-actions {
@@ -547,7 +739,7 @@ const openVideo = (url: string) => {
     left: 0;
     right: 0;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
-    padding: 8px;
+    padding: 4px;
     display: flex;
     justify-content: center;
     opacity: 0;
@@ -563,42 +755,200 @@ const openVideo = (url: string) => {
   }
 }
 
-.statistics-container {
-  margin-bottom: 20px;
+// 媒体区域样式
+.media-section {
+  .media-subtitle {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-2);
+    margin-bottom: 6px;
+  }
 
-  .statistics-card {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  .media-image {
+    border-radius: 4px;
+    cursor: pointer;
     transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-      transform: translateY(-2px);
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  .more-images {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-fill-2);
+    border-radius: 4px;
+    color: var(--color-text-3);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: var(--color-fill-3);
+      color: var(--color-text-2);
+    }
+  }
+}
+
+// 弹窗样式优化
+:deep(.arco-modal) {
+  .arco-modal-body {
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+
+  .arco-modal-header {
+    border-bottom: 1px solid var(--color-border-2);
+    padding: 16px 20px;
+  }
+
+  .arco-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .arco-modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--color-border-2);
+  }
+}
+
+// 描述列表样式优化
+:deep(.arco-descriptions) {
+  &.arco-descriptions-size-mini {
+    .arco-descriptions-item {
+      padding: 4px 8px;
     }
 
-    :deep(.arco-card-body) {
-      padding: 16px;
+    .arco-descriptions-item-label {
+      font-weight: 500;
+      color: var(--color-text-2);
+      background-color: var(--color-fill-1);
+      font-size: 13px;
+      padding: 4px 8px;
     }
 
-    :deep(.arco-statistic) {
-      .arco-statistic-title {
-        font-size: 14px;
-        color: var(--color-text-3);
-        margin-bottom: 8px;
+    .arco-descriptions-item-value {
+      padding: 4px 8px;
+      font-size: 13px;
+
+      p {
+        margin: 0;
+        color: var(--color-text-1);
+      }
+    }
+  }
+
+  .arco-descriptions-item {
+    padding: 6px 10px;
+  }
+
+  .arco-descriptions-item-label {
+    font-weight: 500;
+    color: var(--color-text-2);
+    background-color: var(--color-fill-1);
+  }
+
+  .arco-descriptions-item-value {
+    p {
+      margin: 0;
+      color: var(--color-text-1);
+    }
+  }
+}
+
+// 标签样式优化
+:deep(.arco-tag) {
+  font-weight: 500;
+  font-size: 12px;
+
+  &.arco-tag-size-small {
+    font-size: 11px;
+    padding: 1px 6px;
+    height: 20px;
+    line-height: 18px;
+  }
+}
+
+// 列表样式优化
+:deep(.arco-list) {
+  &.arco-list-size-small {
+    .arco-list-item {
+      padding: 8px 0;
+      min-height: auto;
+    }
+
+    .arco-list-item-meta {
+      .arco-list-item-meta-title {
+        font-size: 13px;
+        margin-bottom: 2px;
       }
 
-      .arco-statistic-content {
-        .arco-statistic-value {
-          font-size: 24px;
-          font-weight: 600;
-        }
-
-        .arco-statistic-suffix {
-          font-size: 16px;
-          margin-left: 4px;
-        }
+      .arco-list-item-meta-description {
+        font-size: 12px;
+        color: var(--color-text-3);
       }
     }
   }
 }
+
+// 响应式优化
+@media (max-width: 1200px) {
+  :deep(.arco-modal) {
+    width: 95% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .info-section {
+    margin-bottom: 6px;
+
+    &.compact {
+      :deep(.arco-card-header) {
+        padding: 6px 8px;
+      }
+
+      :deep(.arco-card-body) {
+        padding: 6px 8px;
+      }
+    }
+
+    :deep(.arco-descriptions) {
+      .arco-descriptions-item {
+        padding: 4px 6px;
+      }
+    }
+  }
+
+  :deep(.arco-modal) {
+    width: 98% !important;
+    margin: 10px;
+
+    .arco-modal-body {
+      padding: 12px 16px;
+    }
+
+    .arco-modal-header {
+      padding: 12px 16px;
+    }
+  }
+
+  .media-section {
+    .media-image {
+      height: 60px !important;
+    }
+
+    .more-images {
+      height: 60px !important;
+      font-size: 12px;
+    }
+  }
+}
+
 </style>
