@@ -57,10 +57,7 @@
           {{ getStatusInfo(record.status).label }}
         </a-tag>
       </template>
-      <template #city="{ record }">
-        {{ formatCityDisplay(record) }}
-      </template>
-      <template #operation="{ record }">
+        <template #operation="{ record }">
         <a-space size="mini">
           <a-button type="outline" size="mini" @click="showEdit(record)">
             编辑
@@ -104,24 +101,7 @@
                 </a-descriptions>
               </a-card>
 
-              <!-- 位置信息 -->
-              <a-card :bordered="false" class="info-section compact">
-                <template #title>
-                  <icon-location /> 位置信息
-                </template>
-                <a-descriptions
-                  size="mini" :column="2"
-                  :data="showData.locationInfo"
-                  layout="inline-horizontal"
-                >
-                  <template #value="{data}">
-                    <span class="compact-text">
-                      {{ data.value || '-' }}
-                    </span>
-                  </template>
-                </a-descriptions>
-              </a-card>
-
+  
               <!-- 设施配置 -->
               <a-card :bordered="false" class="info-section compact">
                 <template #title>
@@ -165,7 +145,7 @@
               <!-- 费用信息 -->
               <a-card :bordered="false" class="info-section compact">
                 <template #title>
-                  <icon-money-circle /> 费用信息
+                  <icon-safe /> 费用信息
                 </template>
                 <a-descriptions
                   size="mini" :column="3"
@@ -185,6 +165,24 @@
                     <template v-else>
                       <span class="compact-text">{{ data.value !== '-' ? `¥${data.value}` : '-' }}</span>
                     </template>
+                  </template>
+                </a-descriptions>
+              </a-card>
+
+              <!-- 位置信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-location /> 位置信息
+                </template>
+                <a-descriptions
+                  size="mini" :column="1"
+                  :data="showData.locationInfo"
+                  layout="inline-horizontal"
+                >
+                  <template #value="{data}">
+                    <span class="compact-text">
+                      {{ data.value || '-' }}
+                    </span>
                   </template>
                 </a-descriptions>
               </a-card>
@@ -352,49 +350,25 @@
                 </template>
                 <a-row :gutter="16">
                   <a-col :span="8">
-                    <a-form-item label="省份" field="provinceId">
-                      <a-select
-                        v-model="editForm.provinceId"
-                        placeholder="请选择省份"
-                        :loading="cityDataLoading"
-                        @change="(value) => onProvinceChange(value, 'edit')"
-                      >
-                        <a-option v-for="item in provinces" :key="item.code" :value="item.code">
-                          {{ item.name }}
-                        </a-option>
+                    <a-form-item label="省份" field="province">
+                      <a-select v-model="editForm.province" placeholder="请选择省份">
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
-                    <a-form-item label="城市" field="cityId">
-                      <a-select
-                        v-model="editForm.cityId"
-                        placeholder="请选择城市"
-                        :disabled="!editForm.provinceId"
-                        @change="(value) => onCityChange(value, 'edit')"
-                      >
-                        <a-option v-for="item in cities" :key="item.code" :value="item.code">
-                          {{ item.name }}
-                        </a-option>
+                    <a-form-item label="城市" field="city">
+                      <a-select v-model="editForm.city" placeholder="请选择城市">
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
-                    <a-form-item label="区县" field="areaId">
-                      <a-select
-                        v-model="editForm.areaId"
-                        placeholder="请选择区县"
-                        :disabled="!editForm.cityId"
-                        @change="(value) => onAreaChange(value, 'edit')"
-                      >
-                        <a-option v-for="item in areas" :key="item.code" :value="item.code">
-                          {{ item.name }}
-                        </a-option>
+                    <a-form-item label="区县" field="district">
+                      <a-select v-model="editForm.district" placeholder="请选择区县">
                       </a-select>
                     </a-form-item>
                   </a-col>
                 </a-row>
-                <a-form-item label="详细地址" field="addresInfo">
+                  <a-form-item label="详细地址" field="addresInfo">
                   <a-input v-model="editForm.addresInfo" placeholder="请输入详细地址" />
                 </a-form-item>
               </a-card>
@@ -465,7 +439,7 @@
               <!-- 费用信息 -->
               <a-card :bordered="false" class="info-section compact">
                 <template #title>
-                  <icon-money-circle /> 费用信息
+                  <icon-safe /> 费用信息
                 </template>
                 <a-row :gutter="16">
                   <a-col :span="12">
@@ -594,44 +568,20 @@
                 </template>
                 <a-row :gutter="16">
                   <a-col :span="8">
-                    <a-form-item label="省份" field="provinceId">
-                      <a-select
-                        v-model="addForm.provinceId"
-                        placeholder="请选择省份"
-                        :loading="cityDataLoading"
-                        @change="(value) => onProvinceChange(value, 'add')"
-                      >
-                        <a-option v-for="item in provinces" :key="item.code" :value="item.code">
-                          {{ item.name }}
-                        </a-option>
+                    <a-form-item label="省份" field="province">
+                      <a-select v-model="addForm.province" placeholder="请选择省份">
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
-                    <a-form-item label="城市" field="cityId">
-                      <a-select
-                        v-model="addForm.cityId"
-                        placeholder="请选择城市"
-                        :disabled="!addForm.provinceId"
-                        @change="(value) => onCityChange(value, 'add')"
-                      >
-                        <a-option v-for="item in cities" :key="item.code" :value="item.code">
-                          {{ item.name }}
-                        </a-option>
+                    <a-form-item label="城市" field="city">
+                      <a-select v-model="addForm.city" placeholder="请选择城市">
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
-                    <a-form-item label="区县" field="areaId">
-                      <a-select
-                        v-model="addForm.areaId"
-                        placeholder="请选择区县"
-                        :disabled="!addForm.cityId"
-                        @change="(value) => onAreaChange(value, 'add')"
-                      >
-                        <a-option v-for="item in areas" :key="item.code" :value="item.code">
-                          {{ item.name }}
-                        </a-option>
+                    <a-form-item label="区县" field="district">
+                      <a-select v-model="addForm.district" placeholder="请选择区县">
                       </a-select>
                     </a-form-item>
                   </a-col>
@@ -707,7 +657,7 @@
               <!-- 费用信息 -->
               <a-card :bordered="false" class="info-section compact">
                 <template #title>
-                  <icon-money-circle /> 费用信息
+                  <icon-safe /> 费用信息
                 </template>
                 <a-row :gutter="16">
                   <a-col :span="12">
@@ -776,15 +726,14 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import useStore from '@/stores/index';
 import { storeToRefs } from 'pinia'
 import { Message } from '@arco-design/web-vue';
 import {
   getHouseList,
   updateHouse,
-  createHouse,
-  getCityCode
+  createHouse
 } from '@/api/house';
 
 const store = storeToRefs(useStore());
@@ -798,11 +747,6 @@ const tableColumns: object[] = reactive([
     title: '房号',
     align: 'center',
     dataIndex: 'roomNumber',
-  },
-  {
-    title: '省市区',
-    align: 'center',
-    slotName: 'city',
   },
   {
     title: '详细地址',
@@ -913,6 +857,7 @@ const getBalconyLabel = (value: number) => {
   return value === 1 ? '有' : '无';
 };
 
+
 // 格式化金额，保留2位小数
 const formatAmount = (value: any) => {
   if (value === null || value === undefined || value === '') {
@@ -927,11 +872,6 @@ const getStatusInfo = (status: number) => {
   return statusOption.find(item => item.value === status) || { label: '未知', color: '' };
 };
 
-// 计算属性：格式化城市显示
-const formatCityDisplay = (record: any) => {
-  const cityName = record.cityName === '直辖市' ? '' : record.cityName;
-  return `${record.provinceName || ''}${cityName}${record.areaName || ''}`;
-};
 
 // 防抖变量和请求计数器
 let isLoading = false;
@@ -982,13 +922,8 @@ const getHouseListFun = () => {
 
 // 组件挂载时初始化数据
 onMounted(() => {
-  console.log('组件挂载，开始初始化数据');
-  console.log('初始搜索数据:', searchData);
-  console.log('初始分页数据:', pagination);
-
   // 延迟一点时间再初始化，确保组件完全挂载
   setTimeout(() => {
-    loadCityData();
     getHouseListFun();
   }, 100);
 });
@@ -1037,12 +972,6 @@ let addLoading = ref(false);
 let addData: any = reactive({});
 let addForm: any = reactive({});
 
-// 省市区数据状态
-let cityData: any = reactive({});
-let cityDataLoading = ref(false);
-let provinces: any[] = reactive([]);
-let cities: any[] = reactive([]);
-let areas: any[] = reactive([]);
 
 const showInfo = (data: any) => {
   showData.name = data.name;
@@ -1074,22 +1003,11 @@ const showInfo = (data: any) => {
   // 位置信息
   showData.locationInfo = [
     {
-      label: '省份：',
-      value: data.provinceName,
-    },
-    {
-      label: '城市：',
-      value: data.cityName === '直辖市' ? data.provinceName : data.cityName,
-    },
-    {
-      label: '区域：',
-      value: data.areaName,
-    },
-    {
       label: '详细地址：',
       value: data.addresInfo,
     },
   ];
+
 
   // 费用信息
   showData.costInfo = [
@@ -1219,6 +1137,7 @@ const showInfo = (data: any) => {
     showData.videoUrl = [];
   }
 
+  
   showData.tenantsUsers = (data.tenantsUsers || []).map((item: any) => {
     item.joinTime = item.houseLinkTenant?.createdAt;
     item.joinStatus = item.houseLinkTenant?.status;
@@ -1228,151 +1147,6 @@ const showInfo = (data: any) => {
   showInfoModel.value = true;
 };
 
-// 省市区数据加载状态
-let isCityDataLoading = false;
-
-// 加载省市区数据
-const loadCityData = async () => {
-  // 防止重复调用
-  if (isCityDataLoading) {
-    return;
-  }
-
-  try {
-    isCityDataLoading = true;
-    cityDataLoading.value = true;
-
-    const response = await getCityCode();
-
-    if (response.status === 1 && response.data) {
-      // 存储原始数据
-      Object.assign(cityData, response.data);
-
-      // 格式化省份数据
-      formatProvinceData();
-    } else {
-      console.error('获取省市区数据失败:', response.message);
-      Message.error({
-        content: '获取省市区数据失败',
-        duration: 3000
-      });
-    }
-  } catch (error) {
-    console.error('加载省市区数据失败:', error);
-    Message.error({
-      content: '加载省市区数据失败，请稍后重试',
-      duration: 3000
-    });
-  } finally {
-    cityDataLoading.value = false;
-    isCityDataLoading = false;
-  }
-};
-
-// 格式化省份数据
-const formatProvinceData = () => {
-  const provinceList = Object.keys(cityData).map(code => ({
-    code,
-    name: cityData[code].name
-  }));
-
-  provinces.splice(0, provinces.length, ...provinceList);
-};
-
-// 获取指定省份的城市列表
-const getCityList = (provinceCode: string) => {
-  const province = cityData[provinceCode];
-  if (!province || !province.children) {
-    return [];
-  }
-
-  return Object.keys(province.children).map(code => ({
-    code,
-    name: province.children[code].name
-  }));
-};
-
-// 获取指定城市的区县列表
-const getAreaList = (provinceCode: string, cityCode: string) => {
-  const province = cityData[provinceCode];
-  if (!province || !province.children || !province.children[cityCode]) {
-    return [];
-  }
-
-  const areas = province.children[cityCode].children;
-  if (!areas) {
-    return [];
-  }
-
-  return Object.keys(areas).map(code => ({
-    code,
-    name: areas[code]
-  }));
-};
-
-// 省份变更处理
-const onProvinceChange = (provinceCode: string, formType: 'add' | 'edit') => {
-  const form = formType === 'add' ? addForm : editForm;
-
-  // 清空城市和区县选择
-  form.cityId = null;
-  form.cityName = '';
-  form.areaId = null;
-  form.areaName = '';
-
-  // 重置城市和区县列表
-  cities.splice(0, cities.length);
-  areas.splice(0, areas.length);
-
-  if (provinceCode) {
-    // 加载城市列表
-    const cityList = getCityList(provinceCode);
-    cities.splice(0, cities.length, ...cityList);
-
-    // 设置省份名称
-    const province = provinces.find(item => item.code === provinceCode);
-    if (province) {
-      form.provinceName = province.name;
-    }
-  }
-};
-
-// 城市变更处理
-const onCityChange = (cityCode: string, formType: 'add' | 'edit') => {
-  const form = formType === 'add' ? addForm : editForm;
-
-  // 清空区县选择
-  form.areaId = null;
-  form.areaName = '';
-
-  // 重置区县列表
-  areas.splice(0, areas.length);
-
-  if (cityCode && form.provinceId) {
-    // 加载区县列表
-    const areaList = getAreaList(form.provinceId, cityCode);
-    areas.splice(0, areas.length, ...areaList);
-
-    // 设置城市名称
-    const city = cities.find(item => item.code === cityCode);
-    if (city) {
-      form.cityName = city.name;
-    }
-  }
-};
-
-// 区县变更处理
-const onAreaChange = (areaCode: string, formType: 'add' | 'edit') => {
-  const form = formType === 'add' ? addForm : editForm;
-
-  if (areaCode) {
-    // 设置区县名称
-    const area = areas.find(item => item.code === areaCode);
-    if (area) {
-      form.areaName = area.name;
-    }
-  }
-};
 
 // 显示编辑弹窗
 const showEdit = (data: any) => {
@@ -1383,51 +1157,38 @@ const showEdit = (data: any) => {
   // 初始化编辑表单数据
   Object.keys(editForm).forEach(key => delete editForm[key]);
 
-  editForm.id = data.id;
-  editForm.name = data.name || '';
-  editForm.roomNumber = data.roomNumber || '';
-  editForm.area = data.area || null;
-  editForm.floor = data.floor || '';
-  editForm.layoutType = data.layoutType || null;
-  editForm.addresInfo = data.addresInfo || '';
-  editForm.toilet = data.toilet !== undefined ? data.toilet : null;
-  editForm.kitchen = data.kitchen !== undefined ? data.kitchen : null;
-  editForm.balcony = data.balcony !== undefined ? data.balcony : null;
-  editForm.toward = data.toward !== undefined ? data.toward : null;
-  editForm.lighting = data.lighting || '';
-  editForm.status = data.status || 1;
-  editForm.price = data.price || null;
-  editForm.fakePrice = data.fakePrice || null;
-  editForm.depositNumber = data.depositNumber || null;
-  editForm.priceNumber = data.priceNumber || null;
-  editForm.waterFee = data.waterFee || null;
-  editForm.electricityFee = data.electricityFee || null;
-  editForm.internetFee = data.internetFee || null;
-  editForm.fuelFee = data.fuelFee || null;
-  editForm.note = data.note || '';
-
-  // 初始化省市区字段
-  editForm.provinceId = data.provinceId || null;
-  editForm.provinceName = data.provinceName || '';
-  editForm.cityId = data.cityId || null;
-  editForm.cityName = data.cityName || '';
-  editForm.areaId = data.areaId || null;
-  editForm.areaName = data.areaName || '';
-
-  // 如果有省市区数据，设置级联选择器
-  if (editForm.provinceId) {
-    // 加载城市列表
-    const cityList = getCityList(editForm.provinceId);
-    cities.splice(0, cities.length, ...cityList);
-
-    if (editForm.cityId) {
-      // 加载区县列表
-      const areaList = getAreaList(editForm.provinceId, editForm.cityId);
-      areas.splice(0, areas.length, ...areaList);
-    }
-  }
-
+  // 立即显示弹窗
   showEditModel.value = true;
+
+  // 在下一个 tick 中设置表单数据
+  nextTick(() => {
+    // 设置基本表单数据
+    editForm.id = data.id;
+    editForm.name = data.name || '';
+    editForm.roomNumber = data.roomNumber || '';
+    editForm.area = data.area ? Number(data.area) : null;
+    editForm.floor = data.floor ? String(data.floor) : '';
+    editForm.layoutType = data.layoutType ? Number(data.layoutType) : null;
+    editForm.province = '';
+    editForm.city = '';
+    editForm.district = '';
+    editForm.addresInfo = data.addresInfo || '';
+    editForm.toilet = data.toilet !== undefined ? Number(data.toilet) : null;
+    editForm.kitchen = data.kitchen !== undefined ? Number(data.kitchen) : null;
+    editForm.balcony = data.balcony !== undefined ? Number(data.balcony) : null;
+    editForm.toward = data.toward !== undefined ? Number(data.toward) : null;
+    editForm.lighting = data.lighting || '';
+    editForm.status = data.status ? Number(data.status) : 1;
+    editForm.price = data.price ? Number(data.price) : null;
+    editForm.fakePrice = data.fakePrice ? Number(data.fakePrice) : null;
+    editForm.depositNumber = data.depositNumber ? Number(data.depositNumber) : null;
+    editForm.priceNumber = data.priceNumber ? Number(data.priceNumber) : null;
+    editForm.waterFee = data.waterFee ? Number(data.waterFee) : null;
+    editForm.electricityFee = data.electricityFee ? Number(data.electricityFee) : null;
+    editForm.internetFee = data.internetFee ? Number(data.internetFee) : null;
+    editForm.fuelFee = data.fuelFee ? Number(data.fuelFee) : null;
+    editForm.note = data.note || '';
+  });
 };
 
 // 取消编辑
@@ -1452,14 +1213,6 @@ const saveEdit = async () => {
       area: editForm.area ? String(editForm.area) : '',
       roomNumber: editForm.roomNumber,
       note: editForm.note || '',
-
-      // 省市区信息
-      provinceId: editForm.provinceId,
-      provinceName: editForm.provinceName || '',
-      cityId: editForm.cityId,
-      cityName: editForm.cityName || '',
-      areaId: editForm.areaId,
-      areaName: editForm.areaName || '',
 
       // 租金信息
       price: editForm.price ? Number(editForm.price) : 0,
@@ -1555,6 +1308,9 @@ const showAddModal = () => {
   addForm.area = null;
   addForm.floor = '';
   addForm.layoutType = null;
+  addForm.province = '';
+  addForm.city = '';
+  addForm.district = '';
   addForm.addresInfo = '';
   addForm.toilet = 0;
   addForm.kitchen = 0;
@@ -1571,18 +1327,6 @@ const showAddModal = () => {
   addForm.internetFee = null;
   addForm.fuelFee = null;
   addForm.note = '';
-
-  // 初始化省市区字段
-  addForm.provinceId = null;
-  addForm.provinceName = '';
-  addForm.cityId = null;
-  addForm.cityName = '';
-  addForm.areaId = null;
-  addForm.areaName = '';
-
-  // 清空级联选择器数据
-  cities.splice(0, cities.length);
-  areas.splice(0, areas.length);
 
   showAddModel.value = true;
 };
@@ -1607,27 +1351,12 @@ const saveAdd = async () => {
       return;
     }
 
-    // 验证省市区必填字段
-    if (!addForm.provinceId || !addForm.cityId || !addForm.areaId) {
-      Message.error({
-        content: '请选择完整的省市区信息',
-        duration: 3000
-      });
-      return;
-    }
-
+  
     // 根据API文档要求构建请求参数
     const requestData = {
       // 必填字段
       name: addForm.name.trim(),
       parentId: 0, // 根级房屋
-      // 使用用户选择的省市区信息
-      provinceId: addForm.provinceId,
-      provinceName: addForm.provinceName || '',
-      cityId: addForm.cityId,
-      cityName: addForm.cityName || '',
-      areaId: addForm.areaId,
-      areaName: addForm.areaName || '',
 
       // 基本信息（可选）
       addresInfo: addForm.addresInfo || '',
