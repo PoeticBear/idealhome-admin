@@ -776,7 +776,7 @@ const openVideo = (url: string) => {
   }
 
   .more-images {
-    height: 80px;
+    height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -791,6 +791,20 @@ const openVideo = (url: string) => {
     &:hover {
       background: var(--color-fill-3);
       color: var(--color-text-2);
+    }
+  }
+
+  // 同行布局时的特殊样式
+  :deep(.arco-row) {
+    .arco-col {
+      &:first-child {
+        border-right: 1px solid var(--color-border-2);
+        padding-right: 16px;
+      }
+
+      &:last-child {
+        padding-left: 16px;
+      }
     }
   }
 }
@@ -941,12 +955,27 @@ const openVideo = (url: string) => {
 
   .media-section {
     .media-image {
-      height: 60px !important;
+      height: 50px !important;
     }
 
     .more-images {
-      height: 60px !important;
+      height: 50px !important;
       font-size: 12px;
+    }
+
+    // 移动端恢复垂直布局
+    :deep(.arco-row) {
+      .arco-col {
+        &:first-child {
+          border-right: none;
+          padding-right: 0;
+          margin-bottom: 8px;
+        }
+
+        &:last-child {
+          padding-left: 0;
+        }
+      }
     }
   }
 }
