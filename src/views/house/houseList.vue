@@ -351,19 +351,54 @@
                 <a-row :gutter="16">
                   <a-col :span="8">
                     <a-form-item label="省份" field="province">
-                      <a-select v-model="editForm.province" placeholder="请选择省份">
+                      <a-select
+                        v-model="editForm.province"
+                        placeholder="请选择省份"
+                        :loading="cityCodeLoading"
+                        @change="(value) => handleProvinceChange(value, true)"
+                      >
+                        <a-option
+                          v-for="province in provinceList"
+                          :key="province.id"
+                          :value="province.id"
+                        >
+                          {{ province.name }}
+                        </a-option>
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
                     <a-form-item label="城市" field="city">
-                      <a-select v-model="editForm.city" placeholder="请选择城市">
+                      <a-select
+                        v-model="editForm.city"
+                        placeholder="请选择城市"
+                        :disabled="!editForm.province"
+                        @change="(value) => handleCityChange(value, true)"
+                      >
+                        <a-option
+                          v-for="city in cityList"
+                          :key="city.id"
+                          :value="city.id"
+                        >
+                          {{ city.name }}
+                        </a-option>
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
                     <a-form-item label="区县" field="district">
-                      <a-select v-model="editForm.district" placeholder="请选择区县">
+                      <a-select
+                        v-model="editForm.district"
+                        placeholder="请选择区县"
+                        :disabled="!editForm.city"
+                      >
+                        <a-option
+                          v-for="district in districtList"
+                          :key="district.id"
+                          :value="district.id"
+                        >
+                          {{ district.name }}
+                        </a-option>
                       </a-select>
                     </a-form-item>
                   </a-col>
@@ -569,19 +604,54 @@
                 <a-row :gutter="16">
                   <a-col :span="8">
                     <a-form-item label="省份" field="province">
-                      <a-select v-model="addForm.province" placeholder="请选择省份">
+                      <a-select
+                        v-model="addForm.province"
+                        placeholder="请选择省份"
+                        :loading="cityCodeLoading"
+                        @change="handleProvinceChange"
+                      >
+                        <a-option
+                          v-for="province in provinceList"
+                          :key="province.id"
+                          :value="province.id"
+                        >
+                          {{ province.name }}
+                        </a-option>
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
                     <a-form-item label="城市" field="city">
-                      <a-select v-model="addForm.city" placeholder="请选择城市">
+                      <a-select
+                        v-model="addForm.city"
+                        placeholder="请选择城市"
+                        :disabled="!addForm.province"
+                        @change="handleCityChange"
+                      >
+                        <a-option
+                          v-for="city in cityList"
+                          :key="city.id"
+                          :value="city.id"
+                        >
+                          {{ city.name }}
+                        </a-option>
                       </a-select>
                     </a-form-item>
                   </a-col>
                   <a-col :span="8">
                     <a-form-item label="区县" field="district">
-                      <a-select v-model="addForm.district" placeholder="请选择区县">
+                      <a-select
+                        v-model="addForm.district"
+                        placeholder="请选择区县"
+                        :disabled="!addForm.city"
+                      >
+                        <a-option
+                          v-for="district in districtList"
+                          :key="district.id"
+                          :value="district.id"
+                        >
+                          {{ district.name }}
+                        </a-option>
                       </a-select>
                     </a-form-item>
                   </a-col>
@@ -733,7 +803,8 @@ import { Message } from '@arco-design/web-vue';
 import {
   getHouseList,
   updateHouse,
-  createHouse
+  createHouse,
+  getCityCode
 } from '@/api/house';
 
 const store = storeToRefs(useStore());
@@ -744,30 +815,30 @@ const tableColumns: object[] = reactive([
     dataIndex: 'name',
   },
   {
-    title: '房号',
+    title: '所在地区',
     align: 'center',
-    dataIndex: 'roomNumber',
+    dataIndex: 'location',
   },
   {
-    title: '详细地址',
+    title: '户型',
     align: 'center',
-    dataIndex: 'addresInfo',
+    dataIndex: 'layoutTypeText',
+  },
+  {
+    title: '面积',
+    align: 'center',
+    dataIndex: 'areaText',
+  },
+  {
+    title: '租金',
+    align: 'center',
+    dataIndex: 'priceText',
   },
   {
     title: '状态',
     align: 'center',
     slotName: 'status',
     dataIndex: 'status'
-  },
-  {
-    title: '创建时间',
-    align: 'center',
-    dataIndex: 'createdAt'
-  },
-  {
-    title: '更新时间',
-    align: 'center',
-    dataIndex: 'updatedAt'
   },
   {
     title: '操作',
@@ -826,6 +897,12 @@ const houseTypeOptions = [
 
 let houseList = reactive<any[]>([]);
 const tableLoading = ref(false);
+
+// 省市区数据状态管理
+const provinceList = ref<any[]>([]);
+const cityList = ref<any[]>([]);
+const districtList = ref<any[]>([]);
+const cityCodeLoading = ref(false);
 
 // 获取户型标签
 const getHouseTypeLabel = (value: number) => {
@@ -903,8 +980,34 @@ const getHouseListFun = () => {
     .then(({ status, data, count }) => {
       if (status === 1) {
         pagination.total = count || 0;
-        houseList.splice(0, houseList.length, ...(data || []));
-        console.log('房屋列表请求成功，数据条数:', data?.length || 0);
+
+        // 处理数据，为每个房屋添加格式化字段
+        const processedData = (data || []).map(item => {
+          // 获取户型标签
+          const getHouseTypeLabel = (value: number) => {
+            const houseTypeOptions = [
+              { label: '单间', value: 1 },
+              { label: '一房一厅', value: 2 },
+              { label: '两房一厅', value: 3 },
+              { label: '三房一厅', value: 4 },
+              { label: '四房一厅', value: 5 },
+              { label: '四房两厅', value: 6 }
+            ];
+            const option = houseTypeOptions.find(item => item.value === value);
+            return option ? option.label : '未知';
+          };
+
+          return {
+            ...item,
+            location: `${item.provinceName || ''} ${item.cityName || ''} ${item.areaName || ''}`.trim(),
+            layoutTypeText: getHouseTypeLabel(item.layoutType),
+            areaText: item.area ? `${item.area}㎡` : '-',
+            priceText: item.price ? `¥${parseFloat(item.price).toLocaleString()}/月` : '-'
+          };
+        });
+
+        houseList.splice(0, houseList.length, ...processedData);
+        console.log('房屋列表请求成功，数据条数:', processedData?.length || 0);
         // 成功获取数据后重置计数器
         requestCount = 0;
       } else {
@@ -925,6 +1028,7 @@ onMounted(() => {
   // 延迟一点时间再初始化，确保组件完全挂载
   setTimeout(() => {
     getHouseListFun();
+    loadProvinceData(); // 加载省份数据
   }, 100);
 });
 
@@ -985,6 +1089,10 @@ const showInfo = (data: any) => {
     {
       label: '房号：',
       value: data.roomNumber,
+    },
+    {
+      label: '所在地区：',
+      value: `${data.provinceName || ''} ${data.cityName || ''} ${data.areaName || ''}`.trim(),
     },
     {
       label: '面积：',
@@ -1157,6 +1265,10 @@ const showEdit = (data: any) => {
   // 初始化编辑表单数据
   Object.keys(editForm).forEach(key => delete editForm[key]);
 
+  // 清空省市区选择器数据
+  cityList.value = [];
+  districtList.value = [];
+
   // 立即显示弹窗
   showEditModel.value = true;
 
@@ -1169,9 +1281,71 @@ const showEdit = (data: any) => {
     editForm.area = data.area ? Number(data.area) : null;
     editForm.floor = data.floor ? String(data.floor) : '';
     editForm.layoutType = data.layoutType ? Number(data.layoutType) : null;
-    editForm.province = '';
-    editForm.city = '';
-    editForm.district = '';
+
+    // 设置省市区数据（使用ID）
+    editForm.province = data.provinceId ? String(data.provinceId) : '';
+    editForm.city = data.cityId ? String(data.cityId) : '';
+    editForm.district = data.areaId ? String(data.areaId) : '';
+
+    // 省市区数据回显逻辑 - 智能匹配
+    if (data.provinceName) {
+      let actualProvinceId = data.provinceId ? String(data.provinceId) : '';
+      let actualCityId = data.cityId ? String(data.cityId) : '';
+      let actualDistrictId = data.areaId ? String(data.areaId) : '';
+
+      // 尝试通过ID加载城市数据
+      const cityLoaded = loadCityData(actualProvinceId, data.provinceName);
+
+      if (cityLoaded && data.cityName) {
+        // 城市数据加载成功，尝试加载区县数据
+        setTimeout(() => {
+          const districtLoaded = loadDistrictData(actualCityId, data.cityName);
+
+          if (districtLoaded) {
+            // 所有数据都加载成功，使用实际ID设置表单
+            editForm.province = actualProvinceId;
+            editForm.city = actualCityId;
+            editForm.district = actualDistrictId;
+          }
+        }, 100);
+      } else {
+        // 如果通过ID无法加载，说明需要通过名称匹配找到正确的ID
+        setTimeout(() => {
+          // 通过名称查找正确的省份ID
+          const matchedProvince = provinceList.value.find(p => p.name === data.provinceName);
+          if (matchedProvince) {
+            editForm.province = matchedProvince.id;
+
+            // 重新加载城市数据
+            loadCityData(matchedProvince.id);
+
+            // 通过名称查找正确的城市ID
+            if (data.cityName) {
+              setTimeout(() => {
+                const matchedCity = cityList.value.find(c => c.name === data.cityName);
+                if (matchedCity) {
+                  editForm.city = matchedCity.id;
+
+                  // 重新加载区县数据
+                  loadDistrictData(matchedCity.id);
+
+                  // 通过名称查找正确的区县ID
+                  if (data.areaName) {
+                    setTimeout(() => {
+                      const matchedDistrict = districtList.value.find(d => d.name === data.areaName);
+                      if (matchedDistrict) {
+                        editForm.district = matchedDistrict.id;
+                      }
+                    }, 100);
+                  }
+                }
+              }, 100);
+            }
+          }
+        }, 100);
+      }
+    }
+
     editForm.addresInfo = data.addresInfo || '';
     editForm.toilet = data.toilet !== undefined ? Number(data.toilet) : null;
     editForm.kitchen = data.kitchen !== undefined ? Number(data.kitchen) : null;
@@ -1213,6 +1387,11 @@ const saveEdit = async () => {
       area: editForm.area ? String(editForm.area) : '',
       roomNumber: editForm.roomNumber,
       note: editForm.note || '',
+
+      // 省市区信息
+      provinceId: editForm.province ? Number(editForm.province) : null,
+      cityId: editForm.city ? Number(editForm.city) : null,
+      areaId: editForm.district ? Number(editForm.district) : null,
 
       // 租金信息
       price: editForm.price ? Number(editForm.price) : 0,
@@ -1328,6 +1507,10 @@ const showAddModal = () => {
   addForm.fuelFee = null;
   addForm.note = '';
 
+  // 清空省市区选择器数据
+  cityList.value = [];
+  districtList.value = [];
+
   showAddModel.value = true;
 };
 
@@ -1363,6 +1546,11 @@ const saveAdd = async () => {
       area: addForm.area ? String(addForm.area) : '',
       roomNumber: addForm.roomNumber || '',
       note: addForm.note || '',
+
+      // 省市区信息（可选）
+      provinceId: addForm.province ? Number(addForm.province) : null,
+      cityId: addForm.city ? Number(addForm.city) : null,
+      areaId: addForm.district ? Number(addForm.district) : null,
 
       // 租金信息（可选，默认为0）
       price: addForm.price ? Number(addForm.price) : 0,
@@ -1449,6 +1637,82 @@ const saveAdd = async () => {
   } finally {
     addLoading.value = false;
   }
+};
+
+// 省市区数据处理函数
+const loadProvinceData = async () => {
+  try {
+    cityCodeLoading.value = true;
+    const response = await getCityCode();
+    if (response.status === 1) {
+      provinceList.value = response.data || [];
+    } else {
+      Message.error(response.message || '获取省份数据失败');
+    }
+  } catch (error) {
+    console.error('获取省份数据失败:', error);
+    Message.error('获取省份数据失败');
+  } finally {
+    cityCodeLoading.value = false;
+  }
+};
+
+const loadCityData = (provinceId: string, provinceName?: string) => {
+  let province = provinceList.value.find(item => item.id === provinceId);
+
+  // 如果通过ID没找到，尝试通过名称查找
+  if (!province && provinceName) {
+    province = provinceList.value.find(item => item.name === provinceName);
+  }
+
+  if (province && province.child) {
+    cityList.value = province.child;
+    districtList.value = []; // 清空区县列表
+    return true; // 返回成功标志
+  } else {
+    cityList.value = [];
+    districtList.value = [];
+    return false; // 返回失败标志
+  }
+};
+
+const loadDistrictData = (cityId: string, cityName?: string) => {
+  let city = cityList.value.find(item => item.id === cityId);
+
+  // 如果通过ID没找到，尝试通过名称查找
+  if (!city && cityName) {
+    city = cityList.value.find(item => item.name === cityName);
+  }
+
+  if (city && city.child) {
+    districtList.value = city.child;
+    return true; // 返回成功标志
+  } else {
+    districtList.value = [];
+    return false; // 返回失败标志
+  }
+};
+
+// 省份选择变化处理
+const handleProvinceChange = (value: string, isEdit = false) => {
+  if (isEdit) {
+    editForm.city = '';
+    editForm.district = '';
+  } else {
+    addForm.city = '';
+    addForm.district = '';
+  }
+  loadCityData(value);
+};
+
+// 城市选择变化处理
+const handleCityChange = (value: string, isEdit = false) => {
+  if (isEdit) {
+    editForm.district = '';
+  } else {
+    addForm.district = '';
+  }
+  loadDistrictData(value);
 };
 
 // 打开视频
