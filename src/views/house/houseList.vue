@@ -1,6 +1,8 @@
 <template>
   <div>
     <!-- 搜索筛选区域已隐藏 -->
+    <!-- 暂时完全移除搜索表单以避免v-model触发问题 -->
+    <!--
     <headForm :label-width="100" style="display: none;">
       <headFormItem label="房屋名称：">
         <a-input
@@ -31,6 +33,17 @@
       <headFormItem type="button" @search="searchList">
       </headFormItem>
     </headForm>
+    -->
+
+    <!-- 操作按钮区域 -->
+    <div class="table-operations">
+      <a-button type="primary" @click="showAddModal">
+        <template #icon>
+          <icon-plus />
+        </template>
+        新增房屋
+      </a-button>
+    </div>
 
     <a-table
       :columns="tableColumns" :loading="tableLoading" stripe
@@ -40,17 +53,22 @@
       @page-change="onPageChange"
     >
       <template #status="{ record }">
-        <a-tag :color="statusOption.find(item => item.value === record.status)?.color">
-          {{ statusOption.find(item => item.value === record.status)?.label || '未知' }}
+        <a-tag :color="getStatusInfo(record.status).color">
+          {{ getStatusInfo(record.status).label }}
         </a-tag>
       </template>
       <template #city="{ record }">
-        {{ `${record.provinceName}${record.cityName==="直辖市"?'':record.cityName}${record.areaName}` }}
+        {{ formatCityDisplay(record) }}
       </template>
       <template #operation="{ record }">
-        <a-button type="primary" size="mini" @click="showInfo(record)">
-          详情
-        </a-button>
+        <a-space size="mini">
+          <a-button type="outline" size="mini" @click="showEdit(record)">
+            编辑
+          </a-button>
+          <a-button type="primary" size="mini" @click="showInfo(record)">
+            详情
+          </a-button>
+        </a-space>
       </template>
     </a-table>
     <a-modal
@@ -156,7 +174,7 @@
                 >
                   <template #value="{data}">
                     <template v-if="data.label==='实际租金：' || data.label==='对外租金：'">
-                      <span class="price-text compact">{{ data.value ? `¥${data.value}/月` : '-' }}</span>
+                      <span class="price-text compact">{{ data.value !== '-' ? `¥${data.value}/月` : '-' }}</span>
                     </template>
                     <template v-else-if="data.label==='押金月数：'">
                       <span class="compact-text">{{ data.value ? `${data.value}个月` : '-' }}</span>
@@ -165,7 +183,7 @@
                       <span class="compact-text">{{ data.value ? `每${data.value}个月付一次` : '-' }}</span>
                     </template>
                     <template v-else>
-                      <span class="compact-text">{{ data.value ? `¥${data.value}` : '-' }}</span>
+                      <span class="compact-text">{{ data.value !== '-' ? `¥${data.value}` : '-' }}</span>
                     </template>
                   </template>
                 </a-descriptions>
@@ -271,14 +289,502 @@
         </div>
       </a-space>
     </a-modal>
+
+    <!-- 编辑弹窗 -->
+    <a-modal
+      v-model:visible="showEditModel" :title="`编辑房屋信息 - ${editData.name}`" title-align="start"
+      width="90%" :mask-closable="false"
+    >
+      <template #footer>
+        <a-space>
+          <a-button @click="cancelEdit">取消</a-button>
+          <a-button type="primary" :loading="editLoading" @click="saveEdit">保存</a-button>
+        </a-space>
+      </template>
+
+      <a-form :model="editForm" layout="vertical" size="medium">
+        <a-row :gutter="16">
+          <!-- 左列 -->
+          <a-col :span="12">
+            <a-space direction="vertical" size="small" fill>
+              <!-- 基本信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-home /> 基本信息
+                </template>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="房屋名称" field="name" :rules="[{ required: true, message: '请输入房屋名称' }]">
+                      <a-input v-model="editForm.name" placeholder="请输入房屋名称" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="房号" field="roomNumber">
+                      <a-input v-model="editForm.roomNumber" placeholder="请输入房号" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="面积(㎡)" field="area">
+                      <a-input-number v-model="editForm.area" placeholder="请输入面积" :min="0" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="楼层" field="floor">
+                      <a-input v-model="editForm.floor" placeholder="请输入楼层" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-form-item label="户型" field="layoutType">
+                  <a-select v-model="editForm.layoutType" placeholder="请选择户型">
+                    <a-option v-for="item in houseTypeOptions" :key="item.value" :value="item.value">
+                      {{ item.label }}
+                    </a-option>
+                  </a-select>
+                </a-form-item>
+              </a-card>
+
+              <!-- 位置信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-location /> 位置信息
+                </template>
+                <a-row :gutter="16">
+                  <a-col :span="8">
+                    <a-form-item label="省份" field="provinceId">
+                      <a-select
+                        v-model="editForm.provinceId"
+                        placeholder="请选择省份"
+                        :loading="cityDataLoading"
+                        @change="(value) => onProvinceChange(value, 'edit')"
+                      >
+                        <a-option v-for="item in provinces" :key="item.code" :value="item.code">
+                          {{ item.name }}
+                        </a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item label="城市" field="cityId">
+                      <a-select
+                        v-model="editForm.cityId"
+                        placeholder="请选择城市"
+                        :disabled="!editForm.provinceId"
+                        @change="(value) => onCityChange(value, 'edit')"
+                      >
+                        <a-option v-for="item in cities" :key="item.code" :value="item.code">
+                          {{ item.name }}
+                        </a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item label="区县" field="areaId">
+                      <a-select
+                        v-model="editForm.areaId"
+                        placeholder="请选择区县"
+                        :disabled="!editForm.cityId"
+                        @change="(value) => onAreaChange(value, 'edit')"
+                      >
+                        <a-option v-for="item in areas" :key="item.code" :value="item.code">
+                          {{ item.name }}
+                        </a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-form-item label="详细地址" field="addresInfo">
+                  <a-input v-model="editForm.addresInfo" placeholder="请输入详细地址" />
+                </a-form-item>
+              </a-card>
+
+              <!-- 设施配置 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-settings /> 设施配置
+                </template>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="卫生间" field="toilet">
+                      <a-select v-model="editForm.toilet" placeholder="请选择">
+                        <a-option :value="0">没有</a-option>
+                        <a-option :value="1">独立</a-option>
+                        <a-option :value="2">公用</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="厨房" field="kitchen">
+                      <a-select v-model="editForm.kitchen" placeholder="请选择">
+                        <a-option :value="0">没有</a-option>
+                        <a-option :value="1">独立</a-option>
+                        <a-option :value="2">公用</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="8">
+                    <a-form-item label="阳台" field="balcony">
+                      <a-select v-model="editForm.balcony" placeholder="请选择">
+                        <a-option :value="0">无</a-option>
+                        <a-option :value="1">有</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item label="朝向" field="toward">
+                      <a-select v-model="editForm.toward" placeholder="请选择">
+                        <a-option :value="1">东</a-option>
+                        <a-option :value="2">西</a-option>
+                        <a-option :value="3">南</a-option>
+                        <a-option :value="4">北</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item label="状态" field="status">
+                      <a-select v-model="editForm.status" placeholder="请选择">
+                        <a-option :value="1">待租</a-option>
+                        <a-option :value="2">已租</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-form-item label="采光情况" field="lighting">
+                  <a-textarea v-model="editForm.lighting" placeholder="请输入采光情况" :max-length="200" show-word-limit />
+                </a-form-item>
+              </a-card>
+            </a-space>
+          </a-col>
+
+          <!-- 右列 -->
+          <a-col :span="12">
+            <a-space direction="vertical" size="small" fill>
+              <!-- 费用信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-money-circle /> 费用信息
+                </template>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="实际租金(元/月)" field="price">
+                      <a-input-number v-model="editForm.price" placeholder="请输入实际租金" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="对外租金(元/月)" field="fakePrice">
+                      <a-input-number v-model="editForm.fakePrice" placeholder="请输入对外租金" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="押金月数" field="depositNumber">
+                      <a-input-number v-model="editForm.depositNumber" placeholder="请输入押金月数" :min="0" :max="12" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="每次付月数" field="priceNumber">
+                      <a-input-number v-model="editForm.priceNumber" placeholder="请输入每次付月数" :min="1" :max="12" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="水费(元)" field="waterFee">
+                      <a-input-number v-model="editForm.waterFee" placeholder="请输入水费" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="电费(元)" field="electricityFee">
+                      <a-input-number v-model="editForm.electricityFee" placeholder="请输入电费" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="网费(元)" field="internetFee">
+                      <a-input-number v-model="editForm.internetFee" placeholder="请输入网费" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="燃气费(元)" field="fuelFee">
+                      <a-input-number v-model="editForm.fuelFee" placeholder="请输入燃气费" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+              </a-card>
+
+              <!-- 其他信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-info-circle /> 其他信息
+                </template>
+                <a-form-item label="备注信息" field="note">
+                  <a-textarea v-model="editForm.note" placeholder="请输入备注信息" :max-length="500" show-word-limit />
+                </a-form-item>
+              </a-card>
+            </a-space>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
+
+    <!-- 新增房屋弹窗 -->
+    <a-modal
+      v-model:visible="showAddModel" title="新增房屋信息" title-align="start"
+      width="90%" :mask-closable="false"
+    >
+      <template #footer>
+        <a-space>
+          <a-button @click="cancelAdd">取消</a-button>
+          <a-button type="primary" :loading="addLoading" @click="saveAdd">保存</a-button>
+        </a-space>
+      </template>
+
+      <a-form :model="addForm" layout="vertical" size="medium">
+        <a-row :gutter="16">
+          <!-- 左列 -->
+          <a-col :span="12">
+            <a-space direction="vertical" size="small" fill>
+              <!-- 基本信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-home /> 基本信息
+                </template>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="房屋名称" field="name" :rules="[{ required: true, message: '请输入房屋名称' }]">
+                      <a-input v-model="addForm.name" placeholder="请输入房屋名称" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="房号" field="roomNumber">
+                      <a-input v-model="addForm.roomNumber" placeholder="请输入房号" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="面积(㎡)" field="area">
+                      <a-input-number v-model="addForm.area" placeholder="请输入面积" :min="0" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="楼层" field="floor">
+                      <a-input v-model="addForm.floor" placeholder="请输入楼层" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-form-item label="户型" field="layoutType">
+                  <a-select v-model="addForm.layoutType" placeholder="请选择户型">
+                    <a-option v-for="item in houseTypeOptions" :key="item.value" :value="item.value">
+                      {{ item.label }}
+                    </a-option>
+                  </a-select>
+                </a-form-item>
+              </a-card>
+
+              <!-- 位置信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-location /> 位置信息
+                </template>
+                <a-row :gutter="16">
+                  <a-col :span="8">
+                    <a-form-item label="省份" field="provinceId">
+                      <a-select
+                        v-model="addForm.provinceId"
+                        placeholder="请选择省份"
+                        :loading="cityDataLoading"
+                        @change="(value) => onProvinceChange(value, 'add')"
+                      >
+                        <a-option v-for="item in provinces" :key="item.code" :value="item.code">
+                          {{ item.name }}
+                        </a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item label="城市" field="cityId">
+                      <a-select
+                        v-model="addForm.cityId"
+                        placeholder="请选择城市"
+                        :disabled="!addForm.provinceId"
+                        @change="(value) => onCityChange(value, 'add')"
+                      >
+                        <a-option v-for="item in cities" :key="item.code" :value="item.code">
+                          {{ item.name }}
+                        </a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item label="区县" field="areaId">
+                      <a-select
+                        v-model="addForm.areaId"
+                        placeholder="请选择区县"
+                        :disabled="!addForm.cityId"
+                        @change="(value) => onAreaChange(value, 'add')"
+                      >
+                        <a-option v-for="item in areas" :key="item.code" :value="item.code">
+                          {{ item.name }}
+                        </a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-form-item label="详细地址" field="addresInfo">
+                  <a-input v-model="addForm.addresInfo" placeholder="请输入详细地址" />
+                </a-form-item>
+              </a-card>
+
+              <!-- 设施配置 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-settings /> 设施配置
+                </template>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="卫生间" field="toilet">
+                      <a-select v-model="addForm.toilet" placeholder="请选择">
+                        <a-option :value="0">没有</a-option>
+                        <a-option :value="1">独立</a-option>
+                        <a-option :value="2">公用</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="厨房" field="kitchen">
+                      <a-select v-model="addForm.kitchen" placeholder="请选择">
+                        <a-option :value="0">没有</a-option>
+                        <a-option :value="1">独立</a-option>
+                        <a-option :value="2">公用</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="8">
+                    <a-form-item label="阳台" field="balcony">
+                      <a-select v-model="addForm.balcony" placeholder="请选择">
+                        <a-option :value="0">无</a-option>
+                        <a-option :value="1">有</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item label="朝向" field="toward">
+                      <a-select v-model="addForm.toward" placeholder="请选择">
+                        <a-option :value="1">东</a-option>
+                        <a-option :value="2">西</a-option>
+                        <a-option :value="3">南</a-option>
+                        <a-option :value="4">北</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="8">
+                    <a-form-item label="状态" field="status">
+                      <a-select v-model="addForm.status" placeholder="请选择">
+                        <a-option :value="1">待租</a-option>
+                        <a-option :value="2">已租</a-option>
+                      </a-select>
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-form-item label="采光情况" field="lighting">
+                  <a-textarea v-model="addForm.lighting" placeholder="请输入采光情况" :max-length="200" show-word-limit />
+                </a-form-item>
+              </a-card>
+            </a-space>
+          </a-col>
+
+          <!-- 右列 -->
+          <a-col :span="12">
+            <a-space direction="vertical" size="small" fill>
+              <!-- 费用信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-money-circle /> 费用信息
+                </template>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="实际租金(元/月)" field="price">
+                      <a-input-number v-model="addForm.price" placeholder="请输入实际租金" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="对外租金(元/月)" field="fakePrice">
+                      <a-input-number v-model="addForm.fakePrice" placeholder="请输入对外租金" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="押金月数" field="depositNumber">
+                      <a-input-number v-model="addForm.depositNumber" placeholder="请输入押金月数" :min="0" :max="12" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="每次付月数" field="priceNumber">
+                      <a-input-number v-model="addForm.priceNumber" placeholder="请输入每次付月数" :min="1" :max="12" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="水费(元)" field="waterFee">
+                      <a-input-number v-model="addForm.waterFee" placeholder="请输入水费" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="电费(元)" field="electricityFee">
+                      <a-input-number v-model="addForm.electricityFee" placeholder="请输入电费" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+                <a-row :gutter="16">
+                  <a-col :span="12">
+                    <a-form-item label="网费(元)" field="internetFee">
+                      <a-input-number v-model="addForm.internetFee" placeholder="请输入网费" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                  <a-col :span="12">
+                    <a-form-item label="燃气费(元)" field="fuelFee">
+                      <a-input-number v-model="addForm.fuelFee" placeholder="请输入燃气费" :min="0" :precision="2" style="width: 100%" />
+                    </a-form-item>
+                  </a-col>
+                </a-row>
+              </a-card>
+
+              <!-- 其他信息 -->
+              <a-card :bordered="false" class="info-section compact">
+                <template #title>
+                  <icon-info-circle /> 其他信息
+                </template>
+                <a-form-item label="备注信息" field="note">
+                  <a-textarea v-model="addForm.note" placeholder="请输入备注信息" :max-length="500" show-word-limit />
+                </a-form-item>
+              </a-card>
+            </a-space>
+          </a-col>
+        </a-row>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 <script lang="ts" setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import useStore from '@/stores/index';
 import { storeToRefs } from 'pinia'
+import { Message } from '@arco-design/web-vue';
 import {
-  getHouseList
+  getHouseList,
+  updateHouse,
+  createHouse,
+  getCityCode
 } from '@/api/house';
 
 const store = storeToRefs(useStore());
@@ -361,8 +867,8 @@ const searchData = reactive({
   status: '',
   starTime: '',
   endTime: '',
-  size: pagination.pageSize,
-  index: pagination.current
+  size: 10,
+  index: 1
 });
 
 const houseTypeOptions = [
@@ -407,22 +913,85 @@ const getBalconyLabel = (value: number) => {
   return value === 1 ? '有' : '无';
 };
 
+// 格式化金额，保留2位小数
+const formatAmount = (value: any) => {
+  if (value === null || value === undefined || value === '') {
+    return '-';
+  }
+  const num = parseFloat(value);
+  return isNaN(num) ? '-' : num.toFixed(2);
+};
+
+// 计算属性：获取状态信息
+const getStatusInfo = (status: number) => {
+  return statusOption.find(item => item.value === status) || { label: '未知', color: '' };
+};
+
+// 计算属性：格式化城市显示
+const formatCityDisplay = (record: any) => {
+  const cityName = record.cityName === '直辖市' ? '' : record.cityName;
+  return `${record.provinceName || ''}${cityName}${record.areaName || ''}`;
+};
+
+// 防抖变量和请求计数器
+let isLoading = false;
+let requestCount = 0;
+let lastRequestTime = 0;
 
 const getHouseListFun = () => {
+  const now = Date.now();
+
+  // 防抖：500ms内只允许一次请求
+  if (isLoading || (now - lastRequestTime) < 500) {
+    console.log('防抖拦截请求，距离上次请求:', now - lastRequestTime, 'ms');
+    return;
+  }
+
+  if (requestCount > 10) {
+    console.error('请求次数过多，停止请求');
+    return;
+  }
+
+  requestCount++;
+  lastRequestTime = now;
+  isLoading = true;
   tableLoading.value = true;
+
+  console.log('发送房屋列表请求 #', requestCount, searchData);
+
   getHouseList(searchData)
     .then(({ status, data, count }) => {
       if (status === 1) {
         pagination.total = count || 0;
         houseList.splice(0, houseList.length, ...(data || []));
+        console.log('房屋列表请求成功，数据条数:', data?.length || 0);
+        // 成功获取数据后重置计数器
+        requestCount = 0;
+      } else {
+        console.error('房屋列表请求失败，状态:', status);
       }
+    })
+    .catch((error) => {
+      console.error('获取房屋列表失败:', error);
     })
     .finally(() => {
       tableLoading.value = false;
+      isLoading = false;
     });
 };
 
-getHouseListFun();
+// 组件挂载时初始化数据
+onMounted(() => {
+  console.log('组件挂载，开始初始化数据');
+  console.log('初始搜索数据:', searchData);
+  console.log('初始分页数据:', pagination);
+
+  // 延迟一点时间再初始化，确保组件完全挂载
+  setTimeout(() => {
+    loadCityData();
+    getHouseListFun();
+  }, 100);
+});
 
 const onPageChange = (index: number) => {
   pagination.current = index;
@@ -455,6 +1024,25 @@ const datePickerChange = (value: any) => {
 
 let showInfoModel = ref(false);
 let showData: any = reactive({});
+
+// 编辑相关状态
+let showEditModel = ref(false);
+let editLoading = ref(false);
+let editData: any = reactive({});
+let editForm: any = reactive({});
+
+// 新增相关状态
+let showAddModel = ref(false);
+let addLoading = ref(false);
+let addData: any = reactive({});
+let addForm: any = reactive({});
+
+// 省市区数据状态
+let cityData: any = reactive({});
+let cityDataLoading = ref(false);
+let provinces: any[] = reactive([]);
+let cities: any[] = reactive([]);
+let areas: any[] = reactive([]);
 
 const showInfo = (data: any) => {
   showData.name = data.name;
@@ -507,11 +1095,11 @@ const showInfo = (data: any) => {
   showData.costInfo = [
     {
       label: '实际租金：',
-      value: data.price,
+      value: formatAmount(data.price),
     },
     {
       label: '对外租金：',
-      value: data.fakePrice,
+      value: formatAmount(data.fakePrice),
     },
     {
       label: '押金月数：',
@@ -523,19 +1111,19 @@ const showInfo = (data: any) => {
     },
     {
       label: '水费：',
-      value: data.waterFee,
+      value: formatAmount(data.waterFee),
     },
     {
       label: '电费：',
-      value: data.electricityFee,
+      value: formatAmount(data.electricityFee),
     },
     {
       label: '网费：',
-      value: data.internetFee,
+      value: formatAmount(data.internetFee),
     },
     {
       label: '燃气费：',
-      value: data.fuelFee,
+      value: formatAmount(data.fuelFee),
     },
   ];
 
@@ -638,6 +1226,500 @@ const showInfo = (data: any) => {
   });
 
   showInfoModel.value = true;
+};
+
+// 省市区数据加载状态
+let isCityDataLoading = false;
+
+// 加载省市区数据
+const loadCityData = async () => {
+  // 防止重复调用
+  if (isCityDataLoading) {
+    return;
+  }
+
+  try {
+    isCityDataLoading = true;
+    cityDataLoading.value = true;
+
+    const response = await getCityCode();
+
+    if (response.status === 1 && response.data) {
+      // 存储原始数据
+      Object.assign(cityData, response.data);
+
+      // 格式化省份数据
+      formatProvinceData();
+    } else {
+      console.error('获取省市区数据失败:', response.message);
+      Message.error({
+        content: '获取省市区数据失败',
+        duration: 3000
+      });
+    }
+  } catch (error) {
+    console.error('加载省市区数据失败:', error);
+    Message.error({
+      content: '加载省市区数据失败，请稍后重试',
+      duration: 3000
+    });
+  } finally {
+    cityDataLoading.value = false;
+    isCityDataLoading = false;
+  }
+};
+
+// 格式化省份数据
+const formatProvinceData = () => {
+  const provinceList = Object.keys(cityData).map(code => ({
+    code,
+    name: cityData[code].name
+  }));
+
+  provinces.splice(0, provinces.length, ...provinceList);
+};
+
+// 获取指定省份的城市列表
+const getCityList = (provinceCode: string) => {
+  const province = cityData[provinceCode];
+  if (!province || !province.children) {
+    return [];
+  }
+
+  return Object.keys(province.children).map(code => ({
+    code,
+    name: province.children[code].name
+  }));
+};
+
+// 获取指定城市的区县列表
+const getAreaList = (provinceCode: string, cityCode: string) => {
+  const province = cityData[provinceCode];
+  if (!province || !province.children || !province.children[cityCode]) {
+    return [];
+  }
+
+  const areas = province.children[cityCode].children;
+  if (!areas) {
+    return [];
+  }
+
+  return Object.keys(areas).map(code => ({
+    code,
+    name: areas[code]
+  }));
+};
+
+// 省份变更处理
+const onProvinceChange = (provinceCode: string, formType: 'add' | 'edit') => {
+  const form = formType === 'add' ? addForm : editForm;
+
+  // 清空城市和区县选择
+  form.cityId = null;
+  form.cityName = '';
+  form.areaId = null;
+  form.areaName = '';
+
+  // 重置城市和区县列表
+  cities.splice(0, cities.length);
+  areas.splice(0, areas.length);
+
+  if (provinceCode) {
+    // 加载城市列表
+    const cityList = getCityList(provinceCode);
+    cities.splice(0, cities.length, ...cityList);
+
+    // 设置省份名称
+    const province = provinces.find(item => item.code === provinceCode);
+    if (province) {
+      form.provinceName = province.name;
+    }
+  }
+};
+
+// 城市变更处理
+const onCityChange = (cityCode: string, formType: 'add' | 'edit') => {
+  const form = formType === 'add' ? addForm : editForm;
+
+  // 清空区县选择
+  form.areaId = null;
+  form.areaName = '';
+
+  // 重置区县列表
+  areas.splice(0, areas.length);
+
+  if (cityCode && form.provinceId) {
+    // 加载区县列表
+    const areaList = getAreaList(form.provinceId, cityCode);
+    areas.splice(0, areas.length, ...areaList);
+
+    // 设置城市名称
+    const city = cities.find(item => item.code === cityCode);
+    if (city) {
+      form.cityName = city.name;
+    }
+  }
+};
+
+// 区县变更处理
+const onAreaChange = (areaCode: string, formType: 'add' | 'edit') => {
+  const form = formType === 'add' ? addForm : editForm;
+
+  if (areaCode) {
+    // 设置区县名称
+    const area = areas.find(item => item.code === areaCode);
+    if (area) {
+      form.areaName = area.name;
+    }
+  }
+};
+
+// 显示编辑弹窗
+const showEdit = (data: any) => {
+  // 深拷贝数据到编辑对象
+  editData.id = data.id;
+  editData.name = data.name;
+
+  // 初始化编辑表单数据
+  Object.keys(editForm).forEach(key => delete editForm[key]);
+
+  editForm.id = data.id;
+  editForm.name = data.name || '';
+  editForm.roomNumber = data.roomNumber || '';
+  editForm.area = data.area || null;
+  editForm.floor = data.floor || '';
+  editForm.layoutType = data.layoutType || null;
+  editForm.addresInfo = data.addresInfo || '';
+  editForm.toilet = data.toilet !== undefined ? data.toilet : null;
+  editForm.kitchen = data.kitchen !== undefined ? data.kitchen : null;
+  editForm.balcony = data.balcony !== undefined ? data.balcony : null;
+  editForm.toward = data.toward !== undefined ? data.toward : null;
+  editForm.lighting = data.lighting || '';
+  editForm.status = data.status || 1;
+  editForm.price = data.price || null;
+  editForm.fakePrice = data.fakePrice || null;
+  editForm.depositNumber = data.depositNumber || null;
+  editForm.priceNumber = data.priceNumber || null;
+  editForm.waterFee = data.waterFee || null;
+  editForm.electricityFee = data.electricityFee || null;
+  editForm.internetFee = data.internetFee || null;
+  editForm.fuelFee = data.fuelFee || null;
+  editForm.note = data.note || '';
+
+  // 初始化省市区字段
+  editForm.provinceId = data.provinceId || null;
+  editForm.provinceName = data.provinceName || '';
+  editForm.cityId = data.cityId || null;
+  editForm.cityName = data.cityName || '';
+  editForm.areaId = data.areaId || null;
+  editForm.areaName = data.areaName || '';
+
+  // 如果有省市区数据，设置级联选择器
+  if (editForm.provinceId) {
+    // 加载城市列表
+    const cityList = getCityList(editForm.provinceId);
+    cities.splice(0, cities.length, ...cityList);
+
+    if (editForm.cityId) {
+      // 加载区县列表
+      const areaList = getAreaList(editForm.provinceId, editForm.cityId);
+      areas.splice(0, areas.length, ...areaList);
+    }
+  }
+
+  showEditModel.value = true;
+};
+
+// 取消编辑
+const cancelEdit = () => {
+  showEditModel.value = false;
+  editLoading.value = false;
+};
+
+// 保存编辑
+const saveEdit = async () => {
+  try {
+    editLoading.value = true;
+
+    // 根据API文档要求构建请求参数
+    const requestData = {
+      // 必填字段
+      id: editForm.id,
+
+      // 基本信息
+      name: editForm.name,
+      addresInfo: editForm.addresInfo,
+      area: editForm.area ? String(editForm.area) : '',
+      roomNumber: editForm.roomNumber,
+      note: editForm.note || '',
+
+      // 省市区信息
+      provinceId: editForm.provinceId,
+      provinceName: editForm.provinceName || '',
+      cityId: editForm.cityId,
+      cityName: editForm.cityName || '',
+      areaId: editForm.areaId,
+      areaName: editForm.areaName || '',
+
+      // 租金信息
+      price: editForm.price ? Number(editForm.price) : 0,
+      fakePrice: editForm.fakePrice ? Number(editForm.fakePrice) : 0,
+      depositNumber: editForm.depositNumber ? Number(editForm.depositNumber) : 0,
+      priceNumber: editForm.priceNumber ? Number(editForm.priceNumber) : 1,
+
+      // 房屋属性
+      floor: editForm.floor ? Number(editForm.floor) : 0,
+      toward: editForm.toward ? Number(editForm.toward) : 1,
+      layoutType: editForm.layoutType ? Number(editForm.layoutType) : 1,
+      toilet: editForm.toilet !== null && editForm.toilet !== undefined ? Number(editForm.toilet) : 0,
+      kitchen: editForm.kitchen !== null && editForm.kitchen !== undefined ? Number(editForm.kitchen) : 0,
+      balcony: editForm.balcony !== null && editForm.balcony !== undefined ? Number(editForm.balcony) : 0,
+
+      // 配套费用
+      waterFee: editForm.waterFee ? Number(editForm.waterFee) : 0,
+      electricityFee: editForm.electricityFee ? Number(editForm.electricityFee) : 0,
+      internetFee: editForm.internetFee ? Number(editForm.internetFee) : 0,
+      fuelFee: editForm.fuelFee ? Number(editForm.fuelFee) : 0,
+
+      // 其他信息
+      lighting: editForm.lighting || '',
+      headImg: [], // 图片数组，暂时为空
+      videoUrl: '', // 视频URL，暂时为空
+    };
+
+    // 调用API更新房屋信息
+    const response = await updateHouse(requestData);
+
+    if (response.status === 1) {
+      // 更新成功
+      Message.success({
+        content: '房屋信息更新成功',
+        duration: 3000
+      });
+
+      showEditModel.value = false;
+      getHouseListFun(); // 刷新列表
+    } else {
+      // 更新失败
+      Message.error({
+        content: response.message || '房屋信息更新失败',
+        duration: 5000
+      });
+    }
+
+  } catch (error: any) {
+    console.error('更新房屋信息失败:', error);
+
+    // 根据错误类型显示不同的错误信息
+    let errorMessage = '房屋信息更新失败';
+
+    if (error.response) {
+      // 服务器响应错误
+      const status = error.response.status;
+      if (status === 401) {
+        errorMessage = '未授权，请重新登录';
+      } else if (status === 403) {
+        errorMessage = '权限不足，无法修改此房屋信息';
+      } else if (status === 404) {
+        errorMessage = '房屋信息不存在';
+      } else if (status === 422) {
+        errorMessage = '数据验证失败，请检查输入信息';
+      } else if (status >= 500) {
+        errorMessage = '服务器错误，请稍后重试';
+      }
+    } else if (error.request) {
+      // 网络错误
+      errorMessage = '网络连接失败，请检查网络设置';
+    } else {
+      // 其他错误
+      errorMessage = error.message || '未知错误';
+    }
+
+    Message.error({
+      content: errorMessage,
+      duration: 5000
+    });
+
+  } finally {
+    editLoading.value = false;
+  }
+};
+
+// 显示新增弹窗
+const showAddModal = () => {
+  // 初始化新增表单数据
+  Object.keys(addForm).forEach(key => delete addForm[key]);
+
+  addForm.name = '';
+  addForm.roomNumber = '';
+  addForm.area = null;
+  addForm.floor = '';
+  addForm.layoutType = null;
+  addForm.addresInfo = '';
+  addForm.toilet = 0;
+  addForm.kitchen = 0;
+  addForm.balcony = 0;
+  addForm.toward = 1;
+  addForm.lighting = '';
+  addForm.status = 1;
+  addForm.price = null;
+  addForm.fakePrice = null;
+  addForm.depositNumber = null;
+  addForm.priceNumber = 1;
+  addForm.waterFee = null;
+  addForm.electricityFee = null;
+  addForm.internetFee = null;
+  addForm.fuelFee = null;
+  addForm.note = '';
+
+  // 初始化省市区字段
+  addForm.provinceId = null;
+  addForm.provinceName = '';
+  addForm.cityId = null;
+  addForm.cityName = '';
+  addForm.areaId = null;
+  addForm.areaName = '';
+
+  // 清空级联选择器数据
+  cities.splice(0, cities.length);
+  areas.splice(0, areas.length);
+
+  showAddModel.value = true;
+};
+
+// 取消新增
+const cancelAdd = () => {
+  showAddModel.value = false;
+  addLoading.value = false;
+};
+
+// 保存新增
+const saveAdd = async () => {
+  try {
+    addLoading.value = true;
+
+    // 验证必填字段
+    if (!addForm.name || addForm.name.trim() === '') {
+      Message.error({
+        content: '请输入房屋名称',
+        duration: 3000
+      });
+      return;
+    }
+
+    // 验证省市区必填字段
+    if (!addForm.provinceId || !addForm.cityId || !addForm.areaId) {
+      Message.error({
+        content: '请选择完整的省市区信息',
+        duration: 3000
+      });
+      return;
+    }
+
+    // 根据API文档要求构建请求参数
+    const requestData = {
+      // 必填字段
+      name: addForm.name.trim(),
+      parentId: 0, // 根级房屋
+      // 使用用户选择的省市区信息
+      provinceId: addForm.provinceId,
+      provinceName: addForm.provinceName || '',
+      cityId: addForm.cityId,
+      cityName: addForm.cityName || '',
+      areaId: addForm.areaId,
+      areaName: addForm.areaName || '',
+
+      // 基本信息（可选）
+      addresInfo: addForm.addresInfo || '',
+      area: addForm.area ? String(addForm.area) : '',
+      roomNumber: addForm.roomNumber || '',
+      note: addForm.note || '',
+
+      // 租金信息（可选，默认为0）
+      price: addForm.price ? Number(addForm.price) : 0,
+      fakePrice: addForm.fakePrice ? Number(addForm.fakePrice) : 0,
+      depositNumber: addForm.depositNumber ? Number(addForm.depositNumber) : 0,
+      priceNumber: addForm.priceNumber ? Number(addForm.priceNumber) : 1,
+
+      // 房屋属性（可选）
+      floor: addForm.floor ? Number(addForm.floor) : 0,
+      toward: addForm.toward ? Number(addForm.toward) : 1,
+      layoutType: addForm.layoutType ? Number(addForm.layoutType) : 1,
+      toilet: addForm.toilet !== null && addForm.toilet !== undefined ? Number(addForm.toilet) : 0,
+      kitchen: addForm.kitchen !== null && addForm.kitchen !== undefined ? Number(addForm.kitchen) : 0,
+      balcony: addForm.balcony !== null && addForm.balcony !== undefined ? Number(addForm.balcony) : 0,
+
+      // 配套费用（可选，默认为0）
+      waterFee: addForm.waterFee ? Number(addForm.waterFee) : 0,
+      electricityFee: addForm.electricityFee ? Number(addForm.electricityFee) : 0,
+      internetFee: addForm.internetFee ? Number(addForm.internetFee) : 0,
+      fuelFee: addForm.fuelFee ? Number(addForm.fuelFee) : 0,
+
+      // 多媒体信息（可选）
+      headImg: [], // 图片数组，暂时为空
+      videoUrl: '', // 视频URL，暂时为空
+      lighting: addForm.lighting || '',
+    };
+
+    // 调用API创建房屋
+    const response = await createHouse(requestData);
+
+    if (response.status === 1) {
+      // 创建成功
+      const newHouseId = response.data;
+
+      Message.success({
+        content: '房屋添加成功',
+        duration: 3000
+      });
+
+      showAddModel.value = false;
+
+      // 刷新房屋列表以获取最新数据
+      getHouseListFun();
+
+    } else {
+      // 创建失败
+      Message.error({
+        content: response.message || '房屋添加失败',
+        duration: 5000
+      });
+    }
+
+  } catch (error: any) {
+    console.error('添加房屋失败:', error);
+
+    // 根据错误类型显示不同的错误信息
+    let errorMessage = '房屋添加失败';
+
+    if (error.response) {
+      // 服务器响应错误
+      const status = error.response.status;
+      if (status === 401) {
+        errorMessage = '未授权，请重新登录';
+      } else if (status === 403) {
+        errorMessage = '权限不足，无法添加房屋';
+      } else if (status === 422) {
+        errorMessage = '数据验证失败，请检查输入信息';
+      } else if (status >= 500) {
+        errorMessage = '服务器错误，请稍后重试';
+      }
+    } else if (error.request) {
+      // 网络错误
+      errorMessage = '网络连接失败，请检查网络设置';
+    } else {
+      // 其他错误
+      errorMessage = error.message || '未知错误';
+    }
+
+    Message.error({
+      content: errorMessage,
+      duration: 5000
+    });
+
+  } finally {
+    addLoading.value = false;
+  }
 };
 
 // 打开视频
@@ -976,6 +2058,132 @@ const openVideo = (url: string) => {
           padding-left: 0;
         }
       }
+    }
+  }
+}
+
+// 编辑表单样式
+:deep(.arco-form) {
+  .arco-form-item {
+    margin-bottom: 16px;
+
+    .arco-form-item-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-2);
+      padding-bottom: 4px;
+    }
+
+    .arco-input,
+    .arco-input-number,
+    .arco-select,
+    .arco-textarea {
+      font-size: 14px;
+
+      &:hover {
+        border-color: var(--color-primary-3);
+      }
+
+      &:focus-within {
+        border-color: var(--color-primary-5);
+        box-shadow: 0 0 0 2px rgba(var(--color-primary-1), 0.1);
+      }
+    }
+
+    .arco-input-number {
+      width: 100%;
+    }
+  }
+}
+
+// 编辑弹窗表单特殊样式
+:deep(.arco-modal-body) {
+  .arco-form {
+    .arco-card {
+      &.compact {
+        .arco-card-body {
+          padding: 12px 16px;
+        }
+      }
+
+      .arco-row {
+        margin: 0;
+
+        .arco-col {
+          padding: 0 8px;
+
+          &:first-child {
+            padding-left: 0;
+          }
+
+          &:last-child {
+            padding-right: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 表单验证错误样式
+:deep(.arco-form-item) {
+  &.arco-form-item-error {
+    .arco-input,
+    .arco-input-number,
+    .arco-select,
+    .arco-textarea {
+      border-color: var(--color-danger-5);
+
+      &:focus-within {
+        border-color: var(--color-danger-5);
+        box-shadow: 0 0 0 2px rgba(var(--color-danger-1), 0.1);
+      }
+    }
+  }
+}
+
+// 加载状态样式
+.arco-btn-loading {
+  position: relative;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+// 表格操作按钮区域样式
+.table-operations {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+
+  .arco-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(var(--color-primary-6), 0.2);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// 响应式布局
+@media (max-width: 768px) {
+  .table-operations {
+    justify-content: center;
+    margin-bottom: 12px;
+
+    .arco-btn {
+      width: 100%;
+      justify-content: center;
     }
   }
 }
