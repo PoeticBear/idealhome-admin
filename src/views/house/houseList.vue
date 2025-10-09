@@ -37,15 +37,35 @@
 
     <!-- 操作按钮区域 -->
     <div class="table-operations">
-      <a-button type="primary" @click="showAddModal">
-        <template #icon>
-          <icon-plus />
-        </template>
-        新增房屋
-      </a-button>
+      <div class="operations-left">
+        <a-button type="primary" @click="showAddModal">
+          <template #icon>
+            <icon-plus />
+          </template>
+          新增房屋
+        </a-button>
+      </div>
+      <div class="operations-right">
+        <a-radio-group v-model="viewMode" type="button" size="small">
+          <a-radio value="table">
+            <template #icon>
+              <icon-list />
+            </template>
+            列表视图
+          </a-radio>
+          <a-radio value="card">
+            <template #icon>
+              <icon-grid />
+            </template>
+            卡片视图
+          </a-radio>
+        </a-radio-group>
+      </div>
     </div>
 
+    <!-- 表格视图 -->
     <a-table
+      v-if="viewMode === 'table'"
       :columns="tableColumns" :loading="tableLoading" stripe
       show-page-size :pagination="pagination"
       :data="houseList" row-key="id"
@@ -68,6 +88,91 @@
         </a-space>
       </template>
     </a-table>
+
+    <!-- 卡片视图 -->
+    <div v-if="viewMode === 'card'" class="card-view-container">
+      <a-row :gutter="16">
+        <a-col
+          v-for="house in houseList"
+          :key="house.id"
+          :xs="24" :sm="12" :md="8" :lg="6" :xl="6"
+        >
+          <a-card class="house-card" :hoverable="true">
+            <template #cover>
+              <div class="card-cover">
+                <div class="house-image-placeholder">
+                  <icon-home size="48" />
+                  <span class="placeholder-text">暂无图片</span>
+                </div>
+              </div>
+            </template>
+
+            <template #actions>
+              <a-button type="outline" size="small" @click="showEdit(house)">
+                <template #icon>
+                  <icon-edit />
+                </template>
+                编辑
+              </a-button>
+              <a-button type="primary" size="small" @click="showInfo(house)">
+                <template #icon>
+                  <icon-eye />
+                </template>
+                详情
+              </a-button>
+            </template>
+
+            <a-card-meta>
+              <template #title>
+                <div class="house-title">{{ house.name }}</div>
+              </template>
+              <template #description>
+                <div class="house-info">
+                  <div class="info-row">
+                    <span class="info-label">户型：</span>
+                    <span class="info-value">{{ house.layoutTypeText }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">面积：</span>
+                    <span class="info-value">{{ house.areaText }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">租金：</span>
+                    <span class="info-value price-text">{{ house.priceText }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">地区：</span>
+                    <span class="info-value location-text">{{ house.location }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">状态：</span>
+                    <a-tag :color="getStatusInfo(house.status).color" size="small">
+                      {{ getStatusInfo(house.status).label }}
+                    </a-tag>
+                  </div>
+                </div>
+              </template>
+            </a-card-meta>
+          </a-card>
+        </a-col>
+      </a-row>
+
+      <!-- 卡片视图分页 -->
+      <div class="card-pagination">
+        <a-pagination
+          :total="pagination.total"
+          :page-size="pagination.pageSize"
+          :current="pagination.current"
+          :show-page-size="pagination.showPageSize"
+          :show-total="pagination.showTotal"
+          :show-more="pagination.showMore"
+          :show-jumper="pagination.showJumper"
+          :simple="pagination.simple"
+          @change="onPageChange"
+          @page-size-change="onPageSizeChange"
+        />
+      </div>
+    </div>
     <a-modal
       v-model:visible="showInfoModel" :title="showData.name" title-align="start"
       width="90%"
@@ -903,6 +1008,9 @@ const provinceList = ref<any[]>([]);
 const cityList = ref<any[]>([]);
 const districtList = ref<any[]>([]);
 const cityCodeLoading = ref(false);
+
+// 视图模式状态管理
+const viewMode = ref<'table' | 'card'>('table');
 
 // 获取户型标签
 const getHouseTypeLabel = (value: number) => {
@@ -2177,6 +2285,187 @@ const openVideo = (url: string) => {
     .arco-btn {
       width: 100%;
       justify-content: center;
+    }
+  }
+}
+
+// 卡片视图样式
+.card-view-container {
+  margin-bottom: 20px;
+}
+
+.card-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 20px 0;
+  border-top: 1px solid var(--color-border-2);
+}
+
+.table-operations {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .operations-left {
+    display: flex;
+    gap: 12px;
+  }
+
+  .operations-right {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.house-card {
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-cover {
+    height: 160px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .house-image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.8);
+
+    .placeholder-text {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+  }
+
+  .house-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-1);
+    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .house-info {
+    .info-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .info-label {
+        color: var(--color-text-3);
+        min-width: 50px;
+        flex-shrink: 0;
+      }
+
+      .info-value {
+        color: var(--color-text-2);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &.price-text {
+          color: var(--color-primary-6);
+          font-weight: 600;
+        }
+
+        &.location-text {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+}
+
+// 卡片操作按钮样式
+:deep(.arco-card-actions) {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border-2);
+  background-color: var(--color-fill-1);
+
+  .arco-btn {
+    flex: 1;
+    height: 32px;
+    font-size: 13px;
+  }
+}
+
+// 卡片元信息样式
+:deep(.arco-card-meta) {
+  .arco-card-meta-title {
+    margin-bottom: 8px;
+  }
+
+  .arco-card-meta-description {
+    color: var(--color-text-2);
+  }
+}
+
+// 卡片视图响应式设计
+@media (max-width: 768px) {
+  .table-operations {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+
+    .operations-left {
+      justify-content: center;
+    }
+
+    .operations-right {
+      justify-content: center;
+    }
+  }
+
+  .house-card {
+    margin-bottom: 12px;
+
+    .card-cover {
+      height: 120px;
+    }
+
+    .house-title {
+      font-size: 15px;
+    }
+
+    .house-info .info-row {
+      font-size: 12px;
+
+      .info-label {
+        min-width: 45px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .house-card .house-info .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+
+    .info-label {
+      margin-bottom: 2px;
+      min-width: auto;
     }
   }
 }
