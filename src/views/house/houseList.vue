@@ -104,55 +104,111 @@
                   <icon-home size="48" />
                   <span class="placeholder-text">暂无图片</span>
                 </div>
+                <!-- 悬浮操作按钮 -->
+                <div class="card-actions">
+                  <a-button
+                    type="primary"
+                    shape="circle"
+                    size="small"
+                    class="action-btn edit-btn"
+                    @click="showEdit(house)"
+                  >
+                    <icon-edit />
+                  </a-button>
+                  <a-button
+                    type="outline"
+                    shape="circle"
+                    size="small"
+                    class="action-btn view-btn"
+                    @click="showInfo(house)"
+                  >
+                    <icon-eye />
+                  </a-button>
+                </div>
               </div>
             </template>
 
-            <template #actions>
-              <a-button type="outline" size="small" @click="showEdit(house)">
-                <template #icon>
-                  <icon-edit />
-                </template>
-                编辑
-              </a-button>
-              <a-button type="primary" size="small" @click="showInfo(house)">
-                <template #icon>
-                  <icon-eye />
-                </template>
-                详情
-              </a-button>
-            </template>
+            <div class="card-content">
+              <!-- 房屋名称 -->
+              <div class="house-title">{{ house.name }}</div>
 
-            <a-card-meta>
-              <template #title>
-                <div class="house-title">{{ house.name }}</div>
-              </template>
-              <template #description>
-                <div class="house-info">
-                  <div class="info-row">
-                    <span class="info-label">户型：</span>
-                    <span class="info-value">{{ house.layoutTypeText }}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">面积：</span>
-                    <span class="info-value">{{ house.areaText }}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">租金：</span>
-                    <span class="info-value price-text">{{ house.priceText }}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">地区：</span>
-                    <span class="info-value location-text">{{ house.location }}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">状态：</span>
-                    <a-tag :color="getStatusInfo(house.status).color" size="small">
-                      {{ getStatusInfo(house.status).label }}
-                    </a-tag>
-                  </div>
+              <!-- 主要信息区：租金突出显示 -->
+              <div class="price-section">
+                <div class="price-value">{{ house.priceText }}</div>
+              </div>
+
+              <!-- 次要信息区：户型和面积 -->
+              <div class="basic-info">
+                <div class="info-item">
+                  <icon-home class="info-icon" />
+                  <span>{{ house.layoutTypeText }}</span>
                 </div>
-              </template>
-            </a-card-meta>
+                <div class="info-item">
+                  <icon-fullscreen class="info-icon" />
+                  <span>{{ house.areaText }}</span>
+                </div>
+              </div>
+
+              <!-- 补充信息区：地区和状态 -->
+              <div class="additional-info">
+                <div class="location-info">
+                  <icon-location class="info-icon small" />
+                  <span>{{ house.location }}</span>
+                </div>
+                <a-tag
+                  :color="getStatusInfo(house.status).color"
+                  size="small"
+                  class="status-tag"
+                >
+                  {{ getStatusInfo(house.status).label }}
+                </a-tag>
+              </div>
+
+              <!-- 租客入住登记按钮（仅待租状态显示） -->
+              <div v-if="house.status === 1" class="checkin-section">
+                <a-button
+                  type="primary"
+                  size="small"
+                  class="checkin-btn"
+                  @click="showCheckinModal(house)"
+                >
+                  <template #icon>
+                    <icon-user-add />
+                  </template>
+                  租客入住登记
+                </a-button>
+              </div>
+
+              <!-- 查看租客按钮（仅已租状态显示） -->
+              <div v-if="house.status === 2" class="tenant-section">
+                <a-button
+                  type="outline"
+                  size="small"
+                  class="tenant-btn"
+                  @click="showTenantDetailModal(house)"
+                >
+                  <template #icon>
+                    <icon-user />
+                  </template>
+                  查看租客
+                </a-button>
+              </div>
+
+              <!-- 水电录入按钮（所有状态显示） -->
+              <div class="utility-section">
+                <a-button
+                  type="outline"
+                  size="small"
+                  class="utility-btn"
+                  @click="showUtilityModal(house)"
+                >
+                  <template #icon>
+                    <icon-thunderbolt />
+                  </template>
+                  录入水电
+                </a-button>
+              </div>
+            </div>
           </a-card>
         </a-col>
       </a-row>
@@ -898,6 +954,912 @@
         </a-row>
       </a-form>
     </a-modal>
+
+    <!-- 租客入住登记弹窗 -->
+    <a-modal
+      v-model:visible="showCheckinModel"
+      :title="`租客入住登记 - ${checkinData.houseName}`"
+      title-align="start"
+      width="800px"
+      :mask-closable="false"
+    >
+      <template #footer>
+        <a-space>
+          <a-button @click="cancelCheckin">取消</a-button>
+          <a-button type="primary" :loading="checkinLoading" @click="saveCheckin">提交登记</a-button>
+        </a-space>
+      </template>
+
+      <div class="checkin-form-container">
+        <!-- 租客信息部分 -->
+        <div class="checkin-section">
+          <h3 class="section-title">
+            <icon-user theme="filled" size="18" />
+            租客信息
+          </h3>
+          <a-form :model="checkinForm" layout="vertical" size="medium">
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item
+                  label="租客姓名"
+                  field="tenantName"
+                  :rules="[{ required: true, message: '请输入租客姓名' }]"
+                >
+                  <a-input
+                    v-model="checkinForm.tenantName"
+                    placeholder="请输入租客姓名"
+                    :max-length="50"
+                    show-word-limit
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item
+                  label="身份证号码"
+                  field="idCard"
+                  :rules="[
+                    { required: true, message: '请输入身份证号码' },
+                    {
+                      validator: (value, callback) => {
+                        const idCardReg = /^[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/
+                        if (!idCardReg.test(value)) {
+                          callback('请输入正确的身份证号码')
+                        } else {
+                          callback()
+                        }
+                      }
+                    }
+                  ]"
+                >
+                  <a-input
+                    v-model="checkinForm.idCard"
+                    placeholder="请输入18位身份证号码"
+                    :max-length="18"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item
+                  label="手机号码"
+                  field="phoneNumber"
+                  :rules="[
+                    { required: true, message: '请输入手机号码' },
+                    {
+                      validator: (value, callback) => {
+                        const phoneReg = /^1[3-9]\d{9}$/
+                        if (!phoneReg.test(value)) {
+                          callback('请输入正确的手机号码')
+                        } else {
+                          callback()
+                        }
+                      }
+                    }
+                  ]"
+                >
+                  <a-input
+                    v-model="checkinForm.phoneNumber"
+                    placeholder="请输入11位手机号码"
+                    :max-length="11"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="身份照片" field="idPhoto">
+                  <a-upload
+                    v-model="checkinForm.idPhoto"
+                    :limit="1"
+                    :auto-upload="false"
+                    accept="image/*"
+                    list-type="picture-card"
+                    image-preview
+                    :on-before-upload="handleBeforeUpload"
+                    :on-change="handleFileChange"
+                  >
+                    <template #upload-button>
+                      <div class="upload-trigger">
+                        <icon-upload />
+                        <div class="upload-text">上传照片</div>
+                      </div>
+                    </template>
+                  </a-upload>
+                  <div class="upload-tip">
+                    支持 jpg、png 格式，文件大小不超过 2MB
+                  </div>
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-form>
+        </div>
+
+        <!-- 租赁信息部分 -->
+        <div class="checkin-section">
+          <h3 class="section-title">
+            <icon-file-text theme="filled" size="18" />
+            租赁信息
+          </h3>
+          <a-form :model="checkinForm" layout="vertical" size="medium">
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item
+                  label="合同起始日期"
+                  field="contractStartDate"
+                  :rules="[{ required: true, message: '请选择合同起始日期' }]"
+                >
+                  <a-date-picker
+                    v-model="checkinForm.contractStartDate"
+                    placeholder="请选择合同起始日期"
+                    style="width: 100%"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item
+                  label="合同结束日期"
+                  field="contractEndDate"
+                  :rules="[{ required: true, message: '请选择合同结束日期' }]"
+                >
+                  <a-date-picker
+                    v-model="checkinForm.contractEndDate"
+                    placeholder="请选择合同结束日期"
+                    style="width: 100%"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="8">
+                <a-form-item
+                  label="月结日"
+                  field="paymentDay"
+                  :rules="[
+                    { required: true, message: '请选择月结日' },
+                    {
+                      validator: (value, callback) => {
+                        const validDays = [1, 15, 20];
+                        if (!validDays.includes(value)) {
+                          callback('月结日只能是1日、15日或20日');
+                        } else {
+                          callback();
+                        }
+                      }
+                    }
+                  ]"
+                >
+                  <a-select
+                    v-model="checkinForm.paymentDay"
+                    placeholder="请选择月结日"
+                    :options="paymentDayOptions"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item
+                  label="出房价格（元）"
+                  field="rentPrice"
+                  :rules="[{ required: true, message: '请输入出房价格' }]"
+                >
+                  <a-input-number
+                    v-model="checkinForm.rentPrice"
+                    placeholder="请输入出房价格"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                  >
+                    <template #suffix>元</template>
+                  </a-input-number>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item
+                  label="房屋押金（元）"
+                  field="houseDeposit"
+                  :rules="[{ required: true, message: '请输入房屋押金' }]"
+                >
+                  <a-input-number
+                    v-model="checkinForm.houseDeposit"
+                    placeholder="请输入房屋押金"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                  >
+                    <template #suffix>元</template>
+                  </a-input-number>
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="8">
+                <a-form-item label="其他押金（元）" field="otherDeposit">
+                  <a-input-number
+                    v-model="checkinForm.otherDeposit"
+                    placeholder="请输入其他押金"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                  >
+                    <template #suffix>元</template>
+                  </a-input-number>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item
+                  label="物管费用（元）"
+                  field="managementFee"
+                  :rules="[{ required: true, message: '请输入物管费用' }]"
+                >
+                  <a-input-number
+                    v-model="checkinForm.managementFee"
+                    placeholder="请输入物管费用"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                  >
+                    <template #suffix>元</template>
+                  </a-input-number>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item
+                  label="网络费用（元）"
+                  field="internetFee"
+                  :rules="[{ required: true, message: '请输入网络费用' }]"
+                >
+                  <a-input-number
+                    v-model="checkinForm.internetFee"
+                    placeholder="请输入网络费用"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                  >
+                    <template #suffix>元</template>
+                  </a-input-number>
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="8">
+                <a-form-item
+                  label="水表底数"
+                  field="waterMeterReading"
+                  :rules="[{ required: true, message: '请输入水表底数' }]"
+                >
+                  <a-input-number
+                    v-model="checkinForm.waterMeterReading"
+                    placeholder="请输入水表底数"
+                    :min="0"
+                    :precision="1"
+                    style="width: 100%"
+                  >
+                    <template #suffix>吨</template>
+                  </a-input-number>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item
+                  label="电表底数"
+                  field="electricMeterReading"
+                  :rules="[{ required: true, message: '请输入电表底数' }]"
+                >
+                  <a-input-number
+                    v-model="checkinForm.electricMeterReading"
+                    placeholder="请输入电表底数"
+                    :min="0"
+                    :precision="1"
+                    style="width: 100%"
+                  >
+                    <template #suffix>度</template>
+                  </a-input-number>
+                </a-form-item>
+              </a-col>
+              <a-col :span="8">
+                <a-form-item label="备注" field="notes">
+                  <a-textarea
+                    v-model="checkinForm.notes"
+                    placeholder="请输入备注信息"
+                    :max-length="200"
+                    :auto-size="{ minRows: 2, maxRows: 4 }"
+                    show-word-limit
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </a-form>
+        </div>
+      </div>
+    </a-modal>
+
+    <!-- 租客详情弹窗 -->
+    <a-modal
+      v-model:visible="showTenantDetailModel"
+      title=""
+      title-align="start"
+      width="900px"
+      :mask-closable="false"
+      class="tenant-detail-modal"
+    >
+      <template #footer>
+        <a-space>
+          <a-button @click="closeTenantDetail">关闭</a-button>
+        </a-space>
+      </template>
+
+      <div class="tenant-detail-container">
+        <!-- 主要内容区域 -->
+        <div class="main-content">
+          <!-- 左侧：租客信息区域 -->
+          <div class="tenant-section">
+            <div class="section-header">
+              <icon-user theme="filled" size="20" />
+              <h3>租客信息</h3>
+            </div>
+
+            <div class="tenant-profile">
+              <div class="tenant-info">
+                <div class="info-row primary">
+                  <span class="label">姓名</span>
+                  <span class="value name">{{ tenantDetailData.tenantName || '-' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">电话</span>
+                  <span class="value">{{ tenantDetailData.phoneNumber || '-' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">身份证</span>
+                  <span class="value">{{ tenantDetailData.idCardNumber || '-' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">入住时间</span>
+                  <span class="value">{{ tenantDetailData.joinTime || '-' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右侧：租赁信息区域 -->
+          <div class="lease-section">
+            <div class="section-header">
+              <icon-file-text theme="filled" size="20" />
+              <h3>租赁信息</h3>
+            </div>
+
+            <!-- 合同期限卡片 -->
+            <div class="contract-period-card">
+              <div class="period-header">
+                <icon-calendar theme="filled" size="18" />
+                <span class="period-title">合同期限</span>
+              </div>
+              <div class="period-content">
+                <div class="period-item">
+                  <span class="period-label">开始日期</span>
+                  <span class="period-value">{{ tenantDetailData.leaseStartDate || '-' }}</span>
+                </div>
+                <div class="period-arrow">
+                  <icon-arrow-right />
+                </div>
+                <div class="period-item">
+                  <span class="period-label">结束日期</span>
+                  <span class="period-value">{{ tenantDetailData.leaseEndDate || '-' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 费用信息网格 -->
+            <div class="fees-grid">
+              <div class="fee-card primary">
+                <div class="fee-icon">
+                  <icon-dollar-circle theme="filled" />
+                </div>
+                <div class="fee-content">
+                  <div class="fee-label">月租金</div>
+                  <div class="fee-value">¥{{ formatAmount(tenantDetailData.rentPrice) }}</div>
+                  <div class="fee-unit">每月</div>
+                </div>
+              </div>
+
+              <div class="fee-card">
+                <div class="fee-icon">
+                  <icon-safe theme="filled" />
+                </div>
+                <div class="fee-content">
+                  <div class="fee-label">房屋押金</div>
+                  <div class="fee-value">¥{{ formatAmount(tenantDetailData.houseDeposit) }}</div>
+                  <div class="fee-unit">一次性</div>
+                </div>
+              </div>
+
+              <div class="fee-card">
+                <div class="fee-icon">
+                  <icon-home theme="filled" />
+                </div>
+                <div class="fee-content">
+                  <div class="fee-label">物业费</div>
+                  <div class="fee-value">¥{{ formatAmount(tenantDetailData.propertyFee) }}</div>
+                  <div class="fee-unit">每月</div>
+                </div>
+              </div>
+
+              <div class="fee-card">
+                <div class="fee-icon">
+                  <icon-wifi theme="filled" />
+                </div>
+                <div class="fee-content">
+                  <div class="fee-label">网络费</div>
+                  <div class="fee-value">¥{{ formatAmount(tenantDetailData.internetFee) }}</div>
+                  <div class="fee-unit">每月</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 其他信息 -->
+            <div class="additional-info">
+              <div class="info-card">
+                <div class="info-header">
+                  <icon-info-circle />
+                  <span>其他信息</span>
+                </div>
+                <div class="info-details">
+                  <div class="detail-row">
+                    <span class="detail-label">月结日</span>
+                    <span class="detail-value">{{ getPaymentDayLabel(tenantDetailData.monthlyPaymentDay) }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">其他押金</span>
+                    <span class="detail-value">¥{{ formatAmount(tenantDetailData.otherDeposit) }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">水表底数</span>
+                    <span class="detail-value">{{ tenantDetailData.waterMeterReading || '-' }} 吨</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">电表底数</span>
+                    <span class="detail-value">{{ tenantDetailData.electricityMeterReading || '-' }} 度</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="remark-card">
+                <div class="remark-header">
+                  <icon-file-text />
+                  <span>备注信息</span>
+                </div>
+                <div class="remark-content">
+                  {{ tenantDetailData.remark || '暂无备注' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部统计信息 -->
+        <div class="summary-section">
+          <div class="summary-item">
+            <span class="summary-label">月度总费用</span>
+            <span class="summary-value primary">¥{{ formatAmount(calculateMonthlyTotal()) }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">入住时长</span>
+            <span class="summary-value">{{ calculateStayDuration() }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">合同剩余天数</span>
+            <span class="summary-value">{{ calculateRemainingDays() }}天</span>
+          </div>
+        </div>
+      </div>
+    </a-modal>
+
+    <!-- 水电录入弹窗 -->
+    <a-modal
+      v-model:visible="showUtilityModel"
+      :title="`水电录入 - ${utilityData.houseName}`"
+      title-align="start"
+      width="1000px"
+      :mask-closable="false"
+    >
+      <template #footer>
+        <a-space>
+          <a-button @click="closeUtilityModal">取消</a-button>
+          <a-button type="primary" :loading="utilityLoading" @click="saveUtility">保存</a-button>
+        </a-space>
+      </template>
+
+      <div class="utility-modal-container">
+        <!-- 房屋信息头部 -->
+        <div class="utility-header">
+          <div class="house-info">
+            <icon-home class="header-icon" />
+            <div class="house-details">
+              <h3>{{ utilityData.houseName }}</h3>
+              <p>请录入各项费用的详细信息</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 缴费项目区域 -->
+        <div class="utility-bills-container">
+          <a-row :gutter="16">
+            <!-- 水费 -->
+            <a-col :span="12">
+              <a-card class="utility-bill-card water-card" :bordered="false">
+                <template #title>
+                  <div class="card-title">
+                    <icon-drop class="title-icon" />
+                    <span>水费</span>
+                  </div>
+                </template>
+                <a-form :model="utilityForm.water" layout="vertical" size="small">
+                  <a-row :gutter="12">
+                    <a-col :span="12">
+                      <a-form-item label="单价 (元/吨)" field="unitPrice">
+                        <a-input-number
+                          v-model="utilityForm.water.unitPrice"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('water')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                      <a-form-item label="起数 (吨)" field="startReading">
+                        <a-input-number
+                          v-model="utilityForm.water.startReading"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('water')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
+                  <a-row :gutter="12">
+                    <a-col :span="12">
+                      <a-form-item label="止数 (吨)" field="endReading">
+                        <a-input-number
+                          v-model="utilityForm.water.endReading"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('water')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                      <a-form-item label="总价 (元)" field="totalPrice">
+                        <a-input-number
+                          v-model="utilityForm.water.totalPrice"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                        />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
+                  <a-form-item label="用量时段" field="dateRange">
+                    <div class="date-range-container">
+                      <a-range-picker
+                        v-model="utilityForm.water.dateRange"
+                        style="width: 100%; margin-bottom: 8px;"
+                        @change="onDateRangeChange('water')"
+                      />
+                      <a-radio-group
+                        v-model="utilityForm.water.quickPeriod"
+                        size="mini"
+                        @change="onQuickPeriodChange('water')"
+                      >
+                        <a-radio value="current">本月</a-radio>
+                        <a-radio value="last">上月</a-radio>
+                        <a-radio value="beforeLast">前两月</a-radio>
+                        <a-radio value="custom">自定义</a-radio>
+                      </a-radio-group>
+                    </div>
+                  </a-form-item>
+                  <a-form-item label="备注" field="notes">
+                    <a-textarea
+                      v-model="utilityForm.water.notes"
+                      placeholder="请输入备注信息"
+                      :auto-size="{ minRows: 2, maxRows: 3 }"
+                    />
+                  </a-form-item>
+                </a-form>
+              </a-card>
+            </a-col>
+
+            <!-- 电费 -->
+            <a-col :span="12">
+              <a-card class="utility-bill-card electricity-card" :bordered="false">
+                <template #title>
+                  <div class="card-title">
+                    <icon-thunderbolt class="title-icon" />
+                    <span>电费</span>
+                  </div>
+                </template>
+                <a-form :model="utilityForm.electricity" layout="vertical" size="small">
+                  <a-row :gutter="12">
+                    <a-col :span="12">
+                      <a-form-item label="单价 (元/度)" field="unitPrice">
+                        <a-input-number
+                          v-model="utilityForm.electricity.unitPrice"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('electricity')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                      <a-form-item label="起数 (度)" field="startReading">
+                        <a-input-number
+                          v-model="utilityForm.electricity.startReading"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('electricity')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
+                  <a-row :gutter="12">
+                    <a-col :span="12">
+                      <a-form-item label="止数 (度)" field="endReading">
+                        <a-input-number
+                          v-model="utilityForm.electricity.endReading"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('electricity')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                      <a-form-item label="总价 (元)" field="totalPrice">
+                        <a-input-number
+                          v-model="utilityForm.electricity.totalPrice"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                        />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
+                  <a-form-item label="用量时段" field="dateRange">
+                    <div class="date-range-container">
+                      <a-range-picker
+                        v-model="utilityForm.electricity.dateRange"
+                        style="width: 100%; margin-bottom: 8px;"
+                        @change="onDateRangeChange('electricity')"
+                      />
+                      <a-radio-group
+                        v-model="utilityForm.electricity.quickPeriod"
+                        size="mini"
+                        @change="onQuickPeriodChange('electricity')"
+                      >
+                        <a-radio value="current">本月</a-radio>
+                        <a-radio value="last">上月</a-radio>
+                        <a-radio value="beforeLast">前两月</a-radio>
+                        <a-radio value="custom">自定义</a-radio>
+                      </a-radio-group>
+                    </div>
+                  </a-form-item>
+                  <a-form-item label="备注" field="notes">
+                    <a-textarea
+                      v-model="utilityForm.electricity.notes"
+                      placeholder="请输入备注信息"
+                      :auto-size="{ minRows: 2, maxRows: 3 }"
+                    />
+                  </a-form-item>
+                </a-form>
+              </a-card>
+            </a-col>
+
+            <!-- 气费 -->
+            <a-col :span="12">
+              <a-card class="utility-bill-card gas-card" :bordered="false">
+                <template #title>
+                  <div class="card-title">
+                    <icon-fire class="title-icon" />
+                    <span>气费</span>
+                  </div>
+                </template>
+                <a-form :model="utilityForm.gas" layout="vertical" size="small">
+                  <a-row :gutter="12">
+                    <a-col :span="12">
+                      <a-form-item label="单价 (元/立方米)" field="unitPrice">
+                        <a-input-number
+                          v-model="utilityForm.gas.unitPrice"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('gas')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                      <a-form-item label="起数 (立方米)" field="startReading">
+                        <a-input-number
+                          v-model="utilityForm.gas.startReading"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('gas')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
+                  <a-row :gutter="12">
+                    <a-col :span="12">
+                      <a-form-item label="止数 (立方米)" field="endReading">
+                        <a-input-number
+                          v-model="utilityForm.gas.endReading"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('gas')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                      <a-form-item label="总价 (元)" field="totalPrice">
+                        <a-input-number
+                          v-model="utilityForm.gas.totalPrice"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                        />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
+                  <a-form-item label="用量时段" field="dateRange">
+                    <div class="date-range-container">
+                      <a-range-picker
+                        v-model="utilityForm.gas.dateRange"
+                        style="width: 100%; margin-bottom: 8px;"
+                        @change="onDateRangeChange('gas')"
+                      />
+                      <a-radio-group
+                        v-model="utilityForm.gas.quickPeriod"
+                        size="mini"
+                        @change="onQuickPeriodChange('gas')"
+                      >
+                        <a-radio value="current">本月</a-radio>
+                        <a-radio value="last">上月</a-radio>
+                        <a-radio value="beforeLast">前两月</a-radio>
+                        <a-radio value="custom">自定义</a-radio>
+                      </a-radio-group>
+                    </div>
+                  </a-form-item>
+                  <a-form-item label="备注" field="notes">
+                    <a-textarea
+                      v-model="utilityForm.gas.notes"
+                      placeholder="请输入备注信息"
+                      :auto-size="{ minRows: 2, maxRows: 3 }"
+                    />
+                  </a-form-item>
+                </a-form>
+              </a-card>
+            </a-col>
+
+            <!-- 热水费 -->
+            <a-col :span="12">
+              <a-card class="utility-bill-card hot-water-card" :bordered="false">
+                <template #title>
+                  <div class="card-title">
+                    <icon-heart-fill class="title-icon" />
+                    <span>热水费</span>
+                  </div>
+                </template>
+                <a-form :model="utilityForm.hotWater" layout="vertical" size="small">
+                  <a-row :gutter="12">
+                    <a-col :span="12">
+                      <a-form-item label="单价 (元/吨)" field="unitPrice">
+                        <a-input-number
+                          v-model="utilityForm.hotWater.unitPrice"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('hotWater')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                      <a-form-item label="起数 (吨)" field="startReading">
+                        <a-input-number
+                          v-model="utilityForm.hotWater.startReading"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('hotWater')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
+                  <a-row :gutter="12">
+                    <a-col :span="12">
+                      <a-form-item label="止数 (吨)" field="endReading">
+                        <a-input-number
+                          v-model="utilityForm.hotWater.endReading"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                          @change="calculateTotalPrice('hotWater')"
+                        />
+                      </a-form-item>
+                    </a-col>
+                    <a-col :span="12">
+                      <a-form-item label="总价 (元)" field="totalPrice">
+                        <a-input-number
+                          v-model="utilityForm.hotWater.totalPrice"
+                          :precision="2"
+                          :min="0"
+                          placeholder="0.00"
+                        />
+                      </a-form-item>
+                    </a-col>
+                  </a-row>
+                  <a-form-item label="用量时段" field="dateRange">
+                    <div class="date-range-container">
+                      <a-range-picker
+                        v-model="utilityForm.hotWater.dateRange"
+                        style="width: 100%; margin-bottom: 8px;"
+                        @change="onDateRangeChange('hotWater')"
+                      />
+                      <a-radio-group
+                        v-model="utilityForm.hotWater.quickPeriod"
+                        size="mini"
+                        @change="onQuickPeriodChange('hotWater')"
+                      >
+                        <a-radio value="current">本月</a-radio>
+                        <a-radio value="last">上月</a-radio>
+                        <a-radio value="beforeLast">前两月</a-radio>
+                        <a-radio value="custom">自定义</a-radio>
+                      </a-radio-group>
+                    </div>
+                  </a-form-item>
+                  <a-form-item label="备注" field="notes">
+                    <a-textarea
+                      v-model="utilityForm.hotWater.notes"
+                      placeholder="请输入备注信息"
+                      :auto-size="{ minRows: 2, maxRows: 3 }"
+                    />
+                  </a-form-item>
+                </a-form>
+              </a-card>
+            </a-col>
+          </a-row>
+        </div>
+
+        <!-- 费用汇总 -->
+        <div class="utility-summary">
+          <a-card size="small" :bordered="false">
+            <div class="summary-content">
+              <div class="summary-item">
+                <span class="label">水费：</span>
+                <span class="value water">¥{{ formatAmount(utilityForm.water.totalPrice || 0) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">电费：</span>
+                <span class="value electricity">¥{{ formatAmount(utilityForm.electricity.totalPrice || 0) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">气费：</span>
+                <span class="value gas">¥{{ formatAmount(utilityForm.gas.totalPrice || 0) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">热水费：</span>
+                <span class="value hot-water">¥{{ formatAmount(utilityForm.hotWater.totalPrice || 0) }}</span>
+              </div>
+              <div class="summary-divider"></div>
+              <div class="summary-item total">
+                <span class="label">总计：</span>
+                <span class="value">¥{{ formatAmount(calculateGrandTotal()) }}</span>
+              </div>
+            </div>
+          </a-card>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 <script lang="ts" setup>
@@ -911,6 +1873,11 @@ import {
   createHouse,
   getCityCode
 } from '@/api/house';
+import {
+  leaseRegister,
+  uploadFile,
+  getTenantDetailByHouseId
+} from '@/api/lease';
 
 const store = storeToRefs(useStore());
 
@@ -1183,6 +2150,68 @@ let showAddModel = ref(false);
 let addLoading = ref(false);
 let addData: any = reactive({});
 let addForm: any = reactive({});
+
+// 租客入住登记相关状态
+let showCheckinModel = ref(false);
+let checkinLoading = ref(false);
+let checkinData: any = reactive({});
+let checkinForm: any = reactive({});
+
+// 租客详情相关状态
+let showTenantDetailModel = ref(false);
+let tenantDetailData: any = reactive({});
+
+// 水电录入相关状态
+let showUtilityModel = ref(false);
+let utilityLoading = ref(false);
+let utilityData: any = reactive({});
+
+// 水电录入表单数据
+let utilityForm: any = reactive({
+  water: {
+    unitPrice: null,
+    startReading: null,
+    endReading: null,
+    totalPrice: null,
+    notes: '',
+    dateRange: [],
+    quickPeriod: 'current'
+  },
+  electricity: {
+    unitPrice: null,
+    startReading: null,
+    endReading: null,
+    totalPrice: null,
+    notes: '',
+    dateRange: [],
+    quickPeriod: 'current'
+  },
+  gas: {
+    unitPrice: null,
+    startReading: null,
+    endReading: null,
+    totalPrice: null,
+    notes: '',
+    dateRange: [],
+    quickPeriod: 'current'
+  },
+  hotWater: {
+    unitPrice: null,
+    startReading: null,
+    endReading: null,
+    totalPrice: null,
+    notes: '',
+    dateRange: [],
+    quickPeriod: 'current'
+  }
+});
+
+// 月结日选项
+const paymentDayOptions = [
+  { label: '1日', value: 1 },
+  { label: '15日', value: 15 },
+  { label: '20日', value: 20 }
+];
 
 
 const showInfo = (data: any) => {
@@ -1827,6 +2856,600 @@ const handleCityChange = (value: string, isEdit = false) => {
 const openVideo = (url: string) => {
   window.open(url, '_blank');
 };
+
+// 显示租客入住登记弹窗
+const showCheckinModal = (house: any) => {
+  // 重置表单数据
+  Object.keys(checkinForm).forEach(key => delete checkinForm[key]);
+
+  // 设置房屋信息
+  checkinData.houseId = house.id;
+  checkinData.houseName = house.name;
+
+  // 初始化租客信息表单
+  checkinForm.tenantName = '';
+  checkinForm.idCard = '';
+  checkinForm.phoneNumber = '';
+  checkinForm.idPhoto = [];
+
+  // 初始化租赁信息表单（保持原有字段名，在提交时映射到API字段）
+  checkinForm.contractStartDate = '';
+  checkinForm.contractEndDate = '';
+  checkinForm.paymentDay = null;
+  checkinForm.rentPrice = null;
+  checkinForm.houseDeposit = null;
+  checkinForm.otherDeposit = null;
+  checkinForm.managementFee = null;
+  checkinForm.internetFee = null;
+  checkinForm.waterMeterReading = null;
+  checkinForm.electricMeterReading = null;
+  checkinForm.notes = '';
+
+  showCheckinModel.value = true;
+};
+
+// 取消租客入住登记
+const cancelCheckin = () => {
+  showCheckinModel.value = false;
+  checkinLoading.value = false;
+  // 重置表单
+  Object.keys(checkinForm).forEach(key => delete checkinForm[key]);
+};
+
+// 文件上传前的验证
+const handleBeforeUpload = (file: any) => {
+  // 检查文件类型
+  const isImage = file.type.startsWith('image/');
+  if (!isImage) {
+    Message.error('只能上传图片文件（jpg、png格式）');
+    return false;
+  }
+
+  // 检查文件大小（2MB）
+  const isLt2M = file.size / 1024 / 1024 < 2;
+  if (!isLt2M) {
+    Message.error('图片大小不能超过2MB');
+    return false;
+  }
+
+  return true;
+};
+
+// 文件选择变化处理
+const handleFileChange = async (fileList: any[], file: any) => {
+  if (file.status === 'uploading') {
+    // 开始上传
+    Message.loading({
+      content: '正在上传身份照片...',
+      duration: 0
+    });
+  } else if (file.status === 'done') {
+    // 上传成功
+    Message.success({
+      content: '身份照片上传成功'
+    });
+  } else if (file.status === 'error') {
+    // 上传失败
+    Message.error({
+      content: '身份照片上传失败，请重试'
+    });
+  }
+};
+
+// 上传身份照片到服务器
+const uploadIdCardImage = async (file: any): Promise<string | null> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', 'id_card');
+
+    const response = await uploadFile(formData);
+
+    if (response.status === 1) {
+      return response.data.url;
+    } else {
+      Message.error(response.message || '照片上传失败');
+      return null;
+    }
+  } catch (error: any) {
+    console.error('上传身份照片失败:', error);
+    Message.error('照片上传失败，请检查网络连接');
+    return null;
+  }
+};
+
+// 显示租客详情弹窗
+const showTenantDetailModal = async (house: any) => {
+  try {
+    // 重置租客详情数据
+    Object.keys(tenantDetailData).forEach(key => delete tenantDetailData[key]);
+
+    // 设置房屋基本信息
+    tenantDetailData.houseId = house.id;
+    tenantDetailData.houseName = house.name;
+
+    // 调用API获取租客详情数据
+    const response = await getTenantDetailByHouseId(house.id);
+
+    if (response.status === 1 && response.data && Array.isArray(response.data) && response.data.length > 0) {
+      // 查找生效中的合同（status === 1），如果有多个，取最新的
+      const activeContracts = response.data.filter(contract => contract.status === 1);
+
+      if (activeContracts.length === 0) {
+        Message.warning('该房屋暂无生效中的租赁合同');
+        return;
+      }
+
+      // 按创建时间降序排序，取最新的合同
+      const latestContract = activeContracts.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+
+      // 提取租客信息
+      if (latestContract.tenant) {
+        tenantDetailData.tenantName = latestContract.tenant.realName || '';
+        tenantDetailData.phoneNumber = latestContract.tenant.phone || '';
+        tenantDetailData.idCardNumber = latestContract.tenant.idCardNumber || '';
+        tenantDetailData.idCardImage = ''; // 租客头像需要单独处理
+        tenantDetailData.joinTime = latestContract.createdAt || '';
+      }
+
+      // 设置租赁信息
+      tenantDetailData.leaseStartDate = latestContract.leaseStartDate || '';
+      tenantDetailData.leaseEndDate = latestContract.leaseEndDate || '';
+      tenantDetailData.monthlyPaymentDay = latestContract.monthlyPaymentDay || 1;
+      tenantDetailData.rentPrice = latestContract.rentPrice || 0;
+      tenantDetailData.houseDeposit = latestContract.houseDeposit || 0;
+      tenantDetailData.otherDeposit = latestContract.otherDeposit || 0;
+      tenantDetailData.propertyFee = latestContract.propertyFee || 0;
+      tenantDetailData.internetFee = latestContract.internetFee || 0;
+      tenantDetailData.waterMeterReading = latestContract.waterMeterReading || 0;
+      tenantDetailData.electricityMeterReading = latestContract.electricityMeterReading || 0;
+      tenantDetailData.remark = latestContract.remark || '';
+    } else {
+      // 如果API调用失败或没有数据，显示提示
+      Message.warning('该房屋暂无租客信息');
+      return;
+    }
+
+    showTenantDetailModel.value = true;
+  } catch (error) {
+    console.error('获取租客详情失败:', error);
+    Message.error('获取租客详情失败，请稍后重试');
+  }
+};
+
+// 关闭租客详情弹窗
+const closeTenantDetail = () => {
+  showTenantDetailModel.value = false;
+  // 重置数据
+  Object.keys(tenantDetailData).forEach(key => delete tenantDetailData[key]);
+};
+
+// 显示水电录入弹窗
+const showUtilityModal = (house: any) => {
+  // 设置房屋信息
+  utilityData.houseId = house.id;
+  utilityData.houseName = house.name;
+
+  // 初始化表单数据，设置默认日期范围为本月
+  initializeUtilityForm();
+
+  showUtilityModel.value = true;
+};
+
+// 关闭水电录入弹窗
+const closeUtilityModal = () => {
+  showUtilityModel.value = false;
+  utilityLoading.value = false;
+  // 重置数据
+  resetUtilityForm();
+  Object.keys(utilityData).forEach(key => delete utilityData[key]);
+};
+
+// 初始化水电录入表单
+const initializeUtilityForm = () => {
+  const today = new Date();
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  ['water', 'electricity', 'gas', 'hotWater'].forEach(type => {
+    utilityForm[type].unitPrice = null;
+    utilityForm[type].startReading = null;
+    utilityForm[type].endReading = null;
+    utilityForm[type].totalPrice = null;
+    utilityForm[type].notes = '';
+    utilityForm[type].dateRange = [currentMonthStart, currentMonthEnd];
+    utilityForm[type].quickPeriod = 'current';
+  });
+};
+
+// 重置水电录入表单
+const resetUtilityForm = () => {
+  ['water', 'electricity', 'gas', 'hotWater'].forEach(type => {
+    Object.keys(utilityForm[type]).forEach(key => {
+      if (key === 'dateRange') {
+        utilityForm[type][key] = [];
+      } else if (key === 'quickPeriod') {
+        utilityForm[type][key] = 'current';
+      } else if (key === 'notes') {
+        utilityForm[type][key] = '';
+      } else {
+        utilityForm[type][key] = null;
+      }
+    });
+  });
+};
+
+// 计算总价
+const calculateTotalPrice = (type: string) => {
+  const form = utilityForm[type];
+  if (form.unitPrice !== null && form.startReading !== null && form.endReading !== null) {
+    const usage = form.endReading - form.startReading;
+    if (usage >= 0) {
+      form.totalPrice = parseFloat((usage * form.unitPrice).toFixed(2));
+    } else {
+      form.totalPrice = null;
+    }
+  }
+};
+
+// 计算总计
+const calculateGrandTotal = () => {
+  let total = 0;
+  ['water', 'electricity', 'gas', 'hotWater'].forEach(type => {
+    if (utilityForm[type].totalPrice !== null) {
+      total += utilityForm[type].totalPrice;
+    }
+  });
+  return total;
+};
+
+// 用量时段变化处理
+const onDateRangeChange = (type: string) => {
+  utilityForm[type].quickPeriod = 'custom';
+};
+
+// 快捷时段选择处理
+const onQuickPeriodChange = (type: string) => {
+  const period = utilityForm[type].quickPeriod;
+  const today = new Date();
+  let startDate: Date;
+  let endDate: Date;
+
+  switch (period) {
+    case 'current':
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      break;
+    case 'last':
+      startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+      break;
+    case 'beforeLast':
+      startDate = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() - 1, 0);
+      break;
+    default:
+      return;
+  }
+
+  utilityForm[type].dateRange = [startDate, endDate];
+};
+
+// 保存水电录入
+const saveUtility = async () => {
+  try {
+    utilityLoading.value = true;
+
+    // 验证表单数据
+    if (!validateUtilityForm()) {
+      utilityLoading.value = false;
+      return;
+    }
+
+    // 构建提交数据
+    const submitData = {
+      houseId: utilityData.houseId,
+      utilityBills: {
+        water: buildUtilityBillData('water'),
+        electricity: buildUtilityBillData('electricity'),
+        gas: buildUtilityBillData('gas'),
+        hotWater: buildUtilityBillData('hotWater')
+      }
+    };
+
+    console.log('水电录入数据:', submitData);
+
+    // TODO: 调用API提交数据
+    // await submitUtilityBills(submitData);
+
+    Message.success('水电费用录入成功！');
+
+    // 关闭弹窗
+    closeUtilityModal();
+
+  } catch (error) {
+    console.error('保存水电录入失败:', error);
+    Message.error('保存失败，请稍后重试');
+  } finally {
+    utilityLoading.value = false;
+  }
+};
+
+// 验证表单数据
+const validateUtilityForm = () => {
+  let hasValidBill = false;
+  let errorMessage = '';
+
+  ['water', 'electricity', 'gas', 'hotWater'].forEach(type => {
+    const form = utilityForm[type];
+    const typeNames = {
+      water: '水费',
+      electricity: '电费',
+      gas: '气费',
+      hotWater: '热水费'
+    };
+
+    // 检查是否有至少一项完整的费用录入
+    if (form.unitPrice !== null && form.startReading !== null &&
+        form.endReading !== null && form.dateRange.length === 2) {
+      hasValidBill = true;
+
+      // 验证数据合理性
+      if (form.startReading < 0) {
+        errorMessage = `${typeNames[type]}起数不能为负数`;
+      } else if (form.endReading < form.startReading) {
+        errorMessage = `${typeNames[type]}止数不能小于起数`;
+      } else if (form.unitPrice <= 0) {
+        errorMessage = `${typeNames[type]}单价必须大于0`;
+      }
+    }
+  });
+
+  if (!hasValidBill) {
+    Message.warning('请至少完整录入一项费用信息');
+    return false;
+  }
+
+  if (errorMessage) {
+    Message.error(errorMessage);
+    return false;
+  }
+
+  return true;
+};
+
+// 构建单个费用项目数据
+const buildUtilityBillData = (type: string) => {
+  const form = utilityForm[type];
+
+  // 如果该费用项目没有完整录入，返回null
+  if (form.unitPrice === null || form.startReading === null ||
+      form.endReading === null || form.dateRange.length === 2 === false) {
+    return null;
+  }
+
+  return {
+    type,
+    unitPrice: form.unitPrice,
+    startReading: form.startReading,
+    endReading: form.endReading,
+    totalPrice: form.totalPrice || 0,
+    notes: form.notes || '',
+    startDate: form.dateRange[0],
+    endDate: form.dateRange[1]
+  };
+};
+
+// 获取月结日标签
+const getPaymentDayLabel = (day: number) => {
+  const option = paymentDayOptions.find(item => item.value === day);
+  return option ? option.label : `${day}日`;
+};
+
+// 计算月度总费用
+const calculateMonthlyTotal = () => {
+  const rent = Number(tenantDetailData.rentPrice) || 0;
+  const property = Number(tenantDetailData.propertyFee) || 0;
+  const internet = Number(tenantDetailData.internetFee) || 0;
+  return rent + property + internet;
+};
+
+// 计算入住时长
+const calculateStayDuration = () => {
+  if (!tenantDetailData.joinTime) return '未知';
+
+  try {
+    const joinDate = new Date(tenantDetailData.joinTime);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - joinDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 30) {
+      return `${diffDays}天`;
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      const remainingDays = diffDays % 30;
+      return remainingDays > 0 ? `${months}个月${remainingDays}天` : `${months}个月`;
+    } else {
+      const years = Math.floor(diffDays / 365);
+      const remainingDays = diffDays % 365;
+      const months = Math.floor(remainingDays / 30);
+      return months > 0 ? `${years}年${months}个月` : `${years}年`;
+    }
+  } catch (error) {
+    return '计算错误';
+  }
+};
+
+// 计算合同剩余天数
+const calculateRemainingDays = () => {
+  if (!tenantDetailData.leaseEndDate) return 0;
+
+  try {
+    const endDate = new Date(tenantDetailData.leaseEndDate);
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return 0;
+    }
+    return diffDays;
+  } catch (error) {
+    return 0;
+  }
+};
+
+// 保存租客入住登记
+const saveCheckin = async () => {
+  try {
+    checkinLoading.value = true;
+
+    // 验证必填字段
+    if (!checkinForm.tenantName?.trim()) {
+      Message.error('请输入租客姓名');
+      return;
+    }
+
+    if (!checkinForm.idCard?.trim()) {
+      Message.error('请输入身份证号码');
+      return;
+    }
+
+    if (!checkinForm.phoneNumber?.trim()) {
+      Message.error('请输入手机号码');
+      return;
+    }
+
+    if (!checkinForm.contractStartDate) {
+      Message.error('请选择合同起始日期');
+      return;
+    }
+
+    if (!checkinForm.contractEndDate) {
+      Message.error('请选择合同结束日期');
+      return;
+    }
+
+    if (!checkinForm.paymentDay) {
+      Message.error('请选择月结日');
+      return;
+    }
+
+    // 验证日期逻辑
+    if (new Date(checkinForm.contractEndDate) <= new Date(checkinForm.contractStartDate)) {
+      Message.error('合同结束日期必须晚于起始日期');
+      return;
+    }
+
+    // 处理身份照片上传
+    let idCardImageUrl = '';
+    if (checkinForm.idPhoto && checkinForm.idPhoto.length > 0 && checkinForm.idPhoto[0].originFile) {
+      Message.loading({
+        content: '正在上传身份照片...',
+        duration: 0
+      });
+
+      idCardImageUrl = await uploadIdCardImage(checkinForm.idPhoto[0].originFile);
+
+      if (!idCardImageUrl) {
+        Message.error('身份照片上传失败，请重试');
+        return;
+      }
+    }
+
+    // 构建API请求数据，按照API文档字段映射
+    const requestData = {
+      houseId: checkinData.houseId,
+      tenantName: checkinForm.tenantName.trim(),
+      idCardNumber: checkinForm.idCard.trim(),
+      phone: checkinForm.phoneNumber.trim(),
+      leaseStartDate: checkinForm.contractStartDate,
+      leaseEndDate: checkinForm.contractEndDate,
+      monthlyPaymentDay: checkinForm.paymentDay,
+      rentPrice: Number(checkinForm.rentPrice) || 0,
+      houseDeposit: Number(checkinForm.houseDeposit) || 0,
+      otherDeposit: Number(checkinForm.otherDeposit) || 0,
+      propertyFee: Number(checkinForm.managementFee) || 0,
+      internetFee: Number(checkinForm.internetFee) || 0,
+      waterMeterReading: Number(checkinForm.waterMeterReading) || 0,
+      electricityMeterReading: Number(checkinForm.electricMeterReading) || 0,
+      remark: checkinForm.notes?.trim() || '',
+      idCardImage: idCardImageUrl
+    };
+
+    // 调用API进行租客入住登记
+    const response = await leaseRegister(requestData);
+
+    if (response.status === 1) {
+      // 登记成功
+      const successMessage = response.data?.contractNumber
+        ? `租客入住登记成功！合同编号：${response.data.contractNumber}`
+        : '租客入住登记成功！';
+
+      Message.success({
+        content: successMessage,
+        duration: 5000
+      });
+
+      // 关闭弹窗
+      showCheckinModel.value = false;
+
+      // 刷新房屋列表
+      getHouseListFun();
+
+    } else {
+      // API返回失败
+      Message.error({
+        content: response.message || '租客入住登记失败',
+        duration: 5000
+      });
+    }
+
+  } catch (error: any) {
+    console.error('租客入住登记失败:', error);
+
+    let errorMessage = '租客入住登记失败，请稍后重试';
+
+    if (error.response) {
+      // 服务器响应错误
+      const status = error.response.status;
+      if (status === 401) {
+        errorMessage = '未授权，请重新登录';
+      } else if (status === 403) {
+        errorMessage = '权限不足，无法进行入住登记';
+      } else if (status === 404) {
+        errorMessage = '房屋不存在或状态不可租赁';
+      } else if (status === 422) {
+        errorMessage = '数据验证失败，请检查输入信息';
+      } else if (status >= 500) {
+        errorMessage = '服务器错误，请稍后重试';
+      }
+    } else if (error.request) {
+      // 网络错误
+      errorMessage = '网络连接失败，请检查网络设置';
+    } else if (error.message) {
+      // 其他错误
+      if (error.message.includes('身份证')) {
+        errorMessage = '身份证号码格式不正确';
+      } else if (error.message.includes('手机号')) {
+        errorMessage = '手机号码格式不正确';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
+    Message.error({
+      content: errorMessage,
+      duration: 5000
+    });
+
+  } finally {
+    checkinLoading.value = false;
+  }
+};
 </script>
 <style scoped lang="scss">
 // 紧凑型信息区域样式
@@ -2322,77 +3945,198 @@ const openVideo = (url: string) => {
 .house-card {
   margin-bottom: 16px;
   transition: all 0.3s ease;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
 
   .card-cover {
     height: 160px;
     overflow: hidden;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
+    position: relative;
 
-  .house-image-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: rgba(255, 255, 255, 0.8);
+    .house-image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: rgba(255, 255, 255, 0.8);
 
-    .placeholder-text {
-      margin-top: 8px;
-      font-size: 14px;
+      .placeholder-text {
+        margin-top: 8px;
+        font-size: 14px;
+        font-weight: 400;
+      }
+    }
+
+    // 悬浮操作按钮
+    .card-actions {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: scale(1.1);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        &:active {
+          transform: scale(0.95);
+        }
+
+        &.edit-btn {
+          background: rgba(22, 93, 255, 0.9);
+          border-color: rgba(22, 93, 255, 0.3);
+          color: white;
+
+          &:hover {
+            background: rgba(22, 93, 255, 1);
+            border-color: rgba(22, 93, 255, 0.5);
+          }
+        }
+
+        &.view-btn {
+          background: rgba(255, 255, 255, 0.95);
+          border-color: rgba(0, 0, 0, 0.1);
+          color: var(--color-text-1);
+
+          &:hover {
+            background: white;
+            border-color: var(--color-primary-6);
+            color: var(--color-primary-6);
+          }
+        }
+
+        :deep(.arco-btn-icon) {
+          font-size: 16px;
+        }
+      }
     }
   }
 
-  .house-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-text-1);
-    margin-bottom: 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  &:hover .card-actions {
+    opacity: 1;
+    transform: translateY(0);
   }
 
-  .house-info {
-    .info-row {
+  // 卡片内容区
+  .card-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .house-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-1);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    margin-bottom: 4px;
+  }
+
+  // 主要信息区：租金
+  .price-section {
+    .price-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--color-primary-6);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+  }
+
+  // 次要信息区：户型和面积
+  .basic-info {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 8px;
+
+    .info-item {
       display: flex;
       align-items: center;
-      margin-bottom: 6px;
-      font-size: 13px;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--color-text-2);
+      font-weight: 500;
 
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      .info-label {
+      .info-icon {
+        font-size: 16px;
         color: var(--color-text-3);
-        min-width: 50px;
+
+        &.small {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+
+  // 补充信息区：地区和状态
+  .additional-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border-2);
+
+    .location-info {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      min-width: 0;
+
+      .info-icon {
+        font-size: 14px;
+        color: var(--color-text-3);
         flex-shrink: 0;
       }
 
-      .info-value {
-        color: var(--color-text-2);
-        flex: 1;
+      span {
+        font-size: 12px;
+        color: var(--color-text-3);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-
-        &.price-text {
-          color: var(--color-primary-6);
-          font-weight: 600;
-        }
-
-        &.location-text {
-          font-size: 12px;
-        }
       }
+    }
+
+    .status-tag {
+      flex-shrink: 0;
+      font-weight: 600;
+      font-size: 11px;
+      padding: 2px 8px;
+      height: auto;
+      line-height: 1.5;
     }
   }
 }
@@ -2441,31 +4185,1474 @@ const openVideo = (url: string) => {
     margin-bottom: 12px;
 
     .card-cover {
-      height: 120px;
+      height: 140px;
+
+      .card-actions {
+        top: 8px;
+        right: 8px;
+        gap: 6px;
+
+        .action-btn {
+          width: 32px;
+          height: 32px;
+
+          :deep(.arco-btn-icon) {
+            font-size: 14px;
+          }
+        }
+      }
+    }
+
+    .card-content {
+      padding: 12px;
+      gap: 10px;
     }
 
     .house-title {
-      font-size: 15px;
+      font-size: 16px;
+      font-weight: 600;
     }
 
-    .house-info .info-row {
-      font-size: 12px;
+    .price-section .price-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
 
-      .info-label {
-        min-width: 45px;
+    .basic-info {
+      gap: 12px;
+
+      .info-item {
+        font-size: 13px;
+
+        .info-icon {
+          font-size: 14px;
+        }
+      }
+    }
+
+    .additional-info {
+      .location-info span {
+        font-size: 11px;
+      }
+
+      .status-tag {
+        font-size: 10px;
+        padding: 1px 6px;
       }
     }
   }
 }
 
 @media (max-width: 480px) {
-  .house-card .house-info .info-row {
-    flex-direction: column;
-    align-items: flex-start;
+  .house-card {
+    .card-cover {
+      height: 120px;
 
-    .info-label {
-      margin-bottom: 2px;
-      min-width: auto;
+      .card-actions {
+        .action-btn {
+          width: 30px;
+          height: 30px;
+
+          :deep(.arco-btn-icon) {
+            font-size: 13px;
+          }
+        }
+      }
+    }
+
+    .card-content {
+      padding: 10px;
+      gap: 8px;
+    }
+
+    .house-title {
+      font-size: 15px;
+      font-weight: 600;
+      -webkit-line-clamp: 1;
+      white-space: nowrap;
+    }
+
+    .price-section .price-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .basic-info {
+      flex-direction: column;
+      gap: 6px;
+
+      .info-item {
+        font-size: 12px;
+
+        .info-icon {
+          font-size: 13px;
+        }
+      }
+    }
+
+    .additional-info {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      padding-top: 6px;
+
+      .location-info {
+        width: 100%;
+      }
+    }
+
+    .utility-section {
+      .utility-btn {
+        height: 30px;
+        font-size: 11px;
+      }
+    }
+  }
+}
+
+// 租客入住登记相关样式
+.checkin-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-2);
+
+  .checkin-btn {
+    width: 100%;
+    height: 36px;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(var(--color-primary-6), 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// 租客查看相关样式
+.tenant-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-2);
+
+  .tenant-btn {
+    width: 100%;
+    height: 36px;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(var(--color-primary-6), 0.2);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// 水电录入相关样式
+.utility-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-2);
+
+  .utility-btn {
+    width: 100%;
+    height: 36px;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border-color: var(--color-warning-6);
+    color: var(--color-warning-6);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(var(--color-warning-6), 0.2);
+      border-color: var(--color-warning-5);
+      color: var(--color-warning-5);
+      background: var(--color-warning-1);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// 租客入住登记弹窗样式
+:deep(.arco-modal-body) {
+  .upload-trigger {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--color-text-3);
+    font-size: 14px;
+
+    .upload-text {
+      margin-top: 4px;
+    }
+  }
+
+  .upload-tip {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--color-text-3);
+    line-height: 1.4;
+  }
+}
+
+// 租客入住登记表单样式优化
+:deep(.arco-form-item) {
+  .arco-form-item-label {
+    font-weight: 600;
+    color: var(--color-text-2);
+  }
+
+  .arco-input,
+  .arco-input-number,
+  .arco-select,
+  .arco-textarea {
+    &:hover {
+      border-color: var(--color-primary-3);
+    }
+
+    &:focus-within {
+      border-color: var(--color-primary-5);
+      box-shadow: 0 0 0 2px rgba(var(--color-primary-1), 0.1);
+    }
+  }
+}
+
+// 上传组件样式优化
+:deep(.arco-upload) {
+  .arco-upload-list-item {
+    border-radius: 6px;
+    overflow: hidden;
+
+    &:hover {
+      border-color: var(--color-primary-5);
+    }
+  }
+
+  .arco-upload-list-picture-card {
+    width: 104px;
+    height: 104px;
+    border-radius: 6px;
+    border: 1px dashed var(--color-border-2);
+    background: var(--color-fill-1);
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: var(--color-primary-5);
+      background: var(--color-primary-1);
+    }
+  }
+}
+
+// 水电录入弹窗样式
+.utility-modal-container {
+  .utility-header {
+    background: var(--color-fill-1);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+
+    .house-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .header-icon {
+        font-size: 32px;
+        color: var(--color-primary-6);
+      }
+
+      .house-details {
+        h3 {
+          margin: 0 0 4px 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--color-text-1);
+        }
+
+        p {
+          margin: 0;
+          font-size: 14px;
+          color: var(--color-text-3);
+        }
+      }
+    }
+  }
+
+  .utility-bills-container {
+    margin-bottom: 20px;
+
+    .utility-bill-card {
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+
+      &:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      }
+
+      .card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 16px;
+
+        .title-icon {
+          font-size: 18px;
+        }
+      }
+
+      &.water-card {
+        border-top: 3px solid var(--color-primary-6);
+
+        .title-icon {
+          color: var(--color-primary-6);
+        }
+      }
+
+      &.electricity-card {
+        border-top: 3px solid #ff9800;
+
+        .title-icon {
+          color: #ff9800;
+        }
+      }
+
+      &.gas-card {
+        border-top: 3px solid #4caf50;
+
+        .title-icon {
+          color: #4caf50;
+        }
+      }
+
+      &.hot-water-card {
+        border-top: 3px solid #f44336;
+
+        .title-icon {
+          color: #f44336;
+        }
+      }
+
+      .date-range-container {
+        .arco-radio-group {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+      }
+
+      :deep(.arco-form-item) {
+        margin-bottom: 12px;
+      }
+
+      :deep(.arco-form-item-label) {
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      :deep(.arco-input-number) {
+        width: 100%;
+      }
+    }
+  }
+
+  .utility-summary {
+    .summary-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: var(--color-fill-1);
+        border-radius: 6px;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: var(--color-fill-2);
+        }
+
+        .label {
+          font-weight: 500;
+          color: var(--color-text-2);
+          font-size: 14px;
+        }
+
+        .value {
+          font-weight: 600;
+          font-size: 16px;
+          color: var(--color-text-1);
+
+          &.water {
+            color: var(--color-primary-6);
+          }
+
+          &.electricity {
+            color: #ff9800;
+          }
+
+          &.gas {
+            color: #4caf50;
+          }
+
+          &.hot-water {
+            color: #f44336;
+          }
+        }
+
+        &.total {
+          background: linear-gradient(135deg, var(--color-primary-1) 0%, var(--color-primary-2) 100%);
+          border: 1px solid var(--color-primary-3);
+          margin-top: 4px;
+
+          .label {
+            color: var(--color-primary-6);
+            font-weight: 600;
+            font-size: 15px;
+          }
+
+          .value {
+            color: var(--color-primary-6);
+            font-size: 18px;
+            font-weight: 700;
+          }
+        }
+      }
+
+      .summary-divider {
+        height: 1px;
+        background: var(--color-border-2);
+        margin: 4px 0;
+      }
+    }
+  }
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  // 水电录入弹窗移动端布局
+  .utility-modal-container {
+    .utility-bills-container {
+      .arco-row {
+        flex-direction: column;
+
+        .arco-col {
+          width: 100% !important;
+          margin-bottom: 12px;
+        }
+      }
+    }
+  }
+  .checkin-section {
+    .checkin-btn {
+      height: 32px;
+      font-size: 12px;
+    }
+  }
+
+  .utility-section {
+    .utility-btn {
+      height: 32px;
+      font-size: 12px;
+    }
+  }
+
+  :deep(.arco-modal) {
+    width: 95% !important;
+    margin: 10px;
+
+    .arco-modal-body {
+      padding: 12px 16px;
+    }
+
+    .arco-modal-header {
+      padding: 12px 16px;
+    }
+
+    .arco-modal-footer {
+      padding: 12px 16px;
+    }
+
+    .utility-modal-container {
+      .utility-header {
+        padding: 16px;
+        margin-bottom: 16px;
+
+        .house-info {
+          gap: 12px;
+
+          .header-icon {
+            font-size: 28px;
+          }
+
+          .house-details {
+            h3 {
+              font-size: 16px;
+            }
+
+            p {
+              font-size: 13px;
+            }
+          }
+        }
+      }
+
+      .utility-bills-container {
+        .utility-bill-card {
+          .card-title {
+            font-size: 15px;
+
+            .title-icon {
+              font-size: 16px;
+            }
+          }
+
+          .date-range-container {
+            .arco-radio-group {
+              gap: 6px;
+            }
+          }
+
+          :deep(.arco-form-item-label) {
+            font-size: 12px;
+          }
+        }
+      }
+
+      .utility-summary {
+        .summary-content {
+          .summary-item {
+            padding: 6px 10px;
+
+            .label {
+              font-size: 13px;
+            }
+
+            .value {
+              font-size: 15px;
+            }
+
+            &.total {
+              .label {
+                font-size: 14px;
+              }
+
+              .value {
+                font-size: 16px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// 租客入住登记弹窗上下布局样式
+.checkin-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .checkin-section {
+    background: var(--color-fill-1);
+    border-radius: 8px;
+    padding: 20px;
+    
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 20px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text-1);
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--color-border-2);
+
+      svg {
+        color: var(--color-primary-6);
+      }
+    }
+
+    .arco-form {
+      .arco-row {
+        margin-bottom: 16px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      .arco-form-item {
+        margin-bottom: 0;
+
+        .arco-form-item-label {
+          font-weight: 500;
+          color: var(--color-text-2);
+          font-size: 14px;
+        }
+
+        .arco-input,
+        .arco-input-number,
+        .arco-select,
+        .arco-textarea,
+        .arco-date-picker {
+          font-size: 14px;
+
+          &:hover {
+            border-color: var(--color-primary-3);
+          }
+
+          &:focus-within {
+            border-color: var(--color-primary-5);
+            box-shadow: 0 0 0 2px rgba(var(--color-primary-1), 0.1);
+          }
+        }
+
+        .upload-trigger {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          color: var(--color-text-3);
+          font-size: 14px;
+
+          .upload-text {
+            margin-top: 4px;
+          }
+        }
+
+        .upload-tip {
+          margin-top: 8px;
+          font-size: 12px;
+          color: var(--color-text-3);
+          line-height: 1.4;
+        }
+      }
+    }
+  }
+}
+
+// 租客入住登记弹窗响应式设计
+@media (max-width: 768px) {
+  .checkin-form-container {
+    gap: 16px;
+
+    .checkin-section {
+      padding: 16px;
+
+      .section-title {
+        font-size: 15px;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+      }
+
+      .arco-form {
+        .arco-row {
+          margin-bottom: 12px;
+        }
+
+        .arco-form-item {
+          .arco-form-item-label {
+            font-size: 13px;
+          }
+
+          .arco-input,
+          .arco-input-number,
+          .arco-select,
+          .arco-textarea,
+          .arco-date-picker {
+            font-size: 13px;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .checkin-form-container {
+    gap: 12px;
+
+    .checkin-section {
+      padding: 12px;
+
+      .section-title {
+        font-size: 14px;
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+      }
+
+      .arco-form {
+        .arco-row {
+          margin-bottom: 10px;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .arco-col {
+          width: 100% !important;
+          margin-bottom: 8px;
+        }
+
+        .arco-form-item {
+          .arco-form-item-label {
+            font-size: 12px;
+          }
+
+          .arco-input,
+          .arco-input-number,
+          .arco-select,
+          .arco-textarea,
+          .arco-date-picker {
+            font-size: 12px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 租客详情弹窗样式
+.tenant-detail-modal {
+  :deep(.arco-modal-body) {
+    padding: 0;
+  }
+
+  :deep(.arco-modal-header) {
+    padding: 0;
+    border: none;
+  }
+
+  :deep(.arco-modal-footer) {
+    padding: 16px 24px;
+    border-top: 1px solid var(--color-border-2);
+    background: var(--color-bg-2);
+  }
+}
+
+.tenant-detail-container {
+  .main-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 20px;
+    margin: 0 0 20px 0;
+  }
+
+  // 租客信息区域
+  .tenant-section {
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: var(--color-bg-2);
+      border-radius: 8px;
+      
+      svg {
+        color: var(--color-primary-6);
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-1);
+      }
+    }
+
+    .tenant-profile {
+      background: var(--color-bg-1);
+      border-radius: 12px;
+            padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+      .tenant-info {
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 0;
+          border-bottom: 1px solid var(--color-border-2);
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          &.primary {
+            background: var(--color-primary-light-1);
+            margin: 0 -20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+
+            .label {
+              font-weight: 600;
+              color: var(--color-primary-6);
+            }
+
+            .value.name {
+              font-size: 18px;
+              font-weight: 700;
+              color: var(--color-primary-6);
+            }
+          }
+
+          .label {
+            font-weight: 500;
+            color: var(--color-text-3);
+            font-size: 14px;
+          }
+
+          .value {
+            font-weight: 500;
+            color: var(--color-text-1);
+            text-align: right;
+          }
+        }
+      }
+    }
+  }
+
+  // 租赁信息区域
+  .lease-section {
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: var(--color-bg-2);
+      border-radius: 8px;
+      
+      svg {
+        color: var(--color-primary-6);
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-1);
+      }
+    }
+
+    // 合同期限卡片
+    .contract-period-card {
+      background: linear-gradient(135deg, var(--color-primary-light-1), var(--color-primary-light-2));
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--color-primary-light-3);
+
+      .period-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+
+        svg {
+          color: var(--color-primary-6);
+        }
+
+        .period-title {
+          font-weight: 600;
+          color: var(--color-primary-6);
+          font-size: 15px;
+        }
+      }
+
+      .period-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .period-item {
+          flex: 1;
+          text-align: center;
+
+          .period-label {
+            display: block;
+            font-size: 12px;
+            color: var(--color-text-3);
+            margin-bottom: 8px;
+          }
+
+          .period-value {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-primary-6);
+          }
+        }
+
+        .period-arrow {
+          color: var(--color-primary-4);
+          margin: 0 16px;
+        }
+      }
+    }
+
+    // 费用信息网格
+    .fees-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+
+      .fee-card {
+        background: var(--color-bg-1);
+        border-radius: 12px;
+        padding: 16px;
+                display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        &.primary {
+          background: linear-gradient(135deg, var(--color-warning-light-1), var(--color-warning-light-2));
+          border-color: var(--color-warning-light-3);
+
+          .fee-icon {
+            svg {
+              color: var(--color-warning-6);
+            }
+          }
+
+          .fee-content {
+            .fee-value {
+              color: var(--color-warning-6);
+              font-size: 18px;
+              font-weight: 700;
+            }
+          }
+        }
+
+        .fee-icon {
+          width: 40px;
+          height: 40px;
+          background: var(--color-fill-2);
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          svg {
+            font-size: 20px;
+            color: var(--color-primary-6);
+          }
+        }
+
+        .fee-content {
+          flex: 1;
+
+          .fee-label {
+            font-size: 12px;
+            color: var(--color-text-3);
+            margin-bottom: 4px;
+          }
+
+          .fee-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-1);
+            margin-bottom: 2px;
+          }
+
+          .fee-unit {
+            font-size: 11px;
+            color: var(--color-text-4);
+          }
+        }
+      }
+    }
+
+    // 其他信息区域
+    .additional-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+
+      .info-card, .remark-card {
+        background: var(--color-bg-1);
+        border-radius: 12px;
+                overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+        .info-header, .remark-header {
+          background: var(--color-fill-2);
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          border-bottom: 1px solid var(--color-border-2);
+
+          svg {
+            color: var(--color-primary-6);
+          }
+
+          span {
+            font-weight: 500;
+            color: var(--color-text-1);
+            font-size: 14px;
+          }
+        }
+
+        .info-details {
+          padding: 16px;
+
+          .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+
+            &:last-child {
+              padding-bottom: 0;
+            }
+
+            .detail-label {
+              font-size: 13px;
+              color: var(--color-text-3);
+            }
+
+            .detail-value {
+              font-size: 13px;
+              font-weight: 500;
+              color: var(--color-text-1);
+            }
+          }
+        }
+
+        .remark-content {
+          padding: 16px;
+          color: var(--color-text-2);
+          font-size: 13px;
+          line-height: 1.6;
+          min-height: 80px;
+        }
+      }
+    }
+  }
+
+  // 底部统计信息
+  .summary-section {
+    background: var(--color-bg-2);
+    border-radius: 12px;
+    padding: 16px 20px;
+        display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .summary-item {
+      text-align: center;
+      flex: 1;
+
+      .summary-label {
+        display: block;
+        font-size: 12px;
+        color: var(--color-text-3);
+        margin-bottom: 4px;
+      }
+
+      .summary-value {
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-1);
+
+        &.primary {
+          color: var(--color-primary-6);
+          font-size: 18px;
+          font-weight: 700;
+        }
+      }
+    }
+  }
+}
+
+// 租客详情弹窗响应式设计
+@media (max-width: 768px) {
+  .tenant-detail-modal {
+    :deep(.arco-modal) {
+      width: 95% !important;
+      margin: 10px;
+    }
+
+    .tenant-detail-container {
+      .main-content {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .tenant-section, .lease-section {
+        .section-header {
+          padding: 10px 12px;
+
+          h3 {
+            font-size: 15px;
+          }
+        }
+      }
+
+      .tenant-profile {
+        padding: 16px;
+
+        .tenant-info {
+          .info-row {
+            padding: 10px 0;
+
+            &.primary {
+              padding: 12px 16px;
+              margin: 0 -16px 8px -16px;
+
+              .value.name {
+                font-size: 16px;
+              }
+            }
+
+            .label, .value {
+              font-size: 13px;
+            }
+          }
+        }
+      }
+
+      .contract-period-card {
+        padding: 16px;
+
+        .period-content {
+          .period-item {
+            .period-value {
+              font-size: 14px;
+            }
+          }
+        }
+      }
+
+      .fees-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+
+        .fee-card {
+          padding: 14px;
+
+          .fee-content {
+            .fee-value {
+              font-size: 15px;
+            }
+          }
+
+          &.primary {
+            .fee-content {
+              .fee-value {
+                font-size: 16px;
+              }
+            }
+          }
+        }
+      }
+
+      .additional-info {
+        grid-template-columns: 1fr;
+        gap: 10px;
+
+        .info-card, .remark-card {
+          .info-details {
+            padding: 12px;
+
+            .detail-row {
+              padding: 6px 0;
+
+              .detail-label, .detail-value {
+                font-size: 12px;
+              }
+            }
+          }
+
+          .remark-content {
+            padding: 12px;
+            font-size: 12px;
+          }
+        }
+      }
+
+      .summary-section {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 16px;
+
+        .summary-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .summary-value {
+            &.primary {
+              font-size: 16px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .tenant-detail-modal {
+    :deep(.arco-modal) {
+      width: 98% !important;
+      margin: 5px;
+    }
+
+    .tenant-detail-container {
+
+      .tenant-profile {
+        padding: 12px;
+
+        .tenant-info {
+          .info-row {
+            padding: 8px 0;
+
+            &.primary {
+              padding: 10px 12px;
+              margin: 0 -12px 6px -12px;
+
+              .value.name {
+                font-size: 15px;
+              }
+            }
+
+            .label, .value {
+              font-size: 12px;
+            }
+          }
+        }
+      }
+
+      .contract-period-card {
+        padding: 12px;
+
+        .period-content {
+          flex-direction: column;
+          gap: 12px;
+
+          .period-arrow {
+            transform: rotate(90deg);
+            margin: 0;
+          }
+        }
+      }
+
+      .fees-grid {
+        gap: 8px;
+
+        .fee-card {
+          padding: 12px;
+
+          .fee-icon {
+            width: 36px;
+            height: 36px;
+
+            svg {
+              font-size: 18px;
+            }
+          }
+
+          .fee-content {
+            .fee-label {
+              font-size: 11px;
+            }
+
+            .fee-value {
+              font-size: 14px;
+              margin-bottom: 1px;
+            }
+
+            .fee-unit {
+              font-size: 10px;
+            }
+          }
+
+          &.primary {
+            .fee-content {
+              .fee-value {
+                font-size: 15px;
+              }
+            }
+          }
+        }
+      }
+
+      .additional-info {
+        .info-card, .remark-card {
+          .info-header, .remark-header {
+            padding: 10px 12px;
+
+            span {
+              font-size: 13px;
+            }
+          }
+
+          .info-details {
+            padding: 10px;
+
+            .detail-row {
+              padding: 5px 0;
+
+              .detail-label, .detail-value {
+                font-size: 11px;
+              }
+            }
+          }
+
+          .remark-content {
+            padding: 10px;
+            font-size: 11px;
+            min-height: 60px;
+          }
+        }
+      }
+
+      .summary-section {
+        padding: 10px 12px;
+        gap: 10px;
+
+        .summary-item {
+          .summary-label {
+            font-size: 11px;
+          }
+
+          .summary-value {
+            font-size: 14px;
+
+            &.primary {
+              font-size: 15px;
+            }
+          }
+        }
+      }
+
+      .utility-modal-container {
+        .utility-header {
+          padding: 12px;
+          margin-bottom: 12px;
+
+          .house-info {
+            flex-direction: column;
+            text-align: center;
+            gap: 8px;
+
+            .header-icon {
+              font-size: 24px;
+            }
+
+            .house-details {
+              h3 {
+                font-size: 15px;
+              }
+
+              p {
+                font-size: 12px;
+              }
+            }
+          }
+        }
+
+        .utility-bills-container {
+          margin-bottom: 16px;
+
+          .utility-bill-card {
+            margin-bottom: 12px;
+
+            .card-title {
+              font-size: 14px;
+
+              .title-icon {
+                font-size: 15px;
+              }
+            }
+
+            .date-range-container {
+              .arco-radio-group {
+                flex-direction: column;
+                gap: 4px;
+
+                .arco-radio {
+                  margin-right: 0;
+                }
+              }
+            }
+
+            :deep(.arco-form-item-label) {
+              font-size: 11px;
+            }
+          }
+        }
+
+        .utility-summary {
+          .summary-content {
+            gap: 8px;
+
+            .summary-item {
+              padding: 5px 8px;
+
+              .label {
+                font-size: 12px;
+              }
+
+              .value {
+                font-size: 14px;
+              }
+
+              &.total {
+                padding: 8px 10px;
+                margin-top: 2px;
+
+                .label {
+                  font-size: 13px;
+                }
+
+                .value {
+                  font-size: 15px;
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
