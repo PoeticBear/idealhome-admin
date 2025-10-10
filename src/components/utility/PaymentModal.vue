@@ -16,16 +16,7 @@
     </template>
 
     <div class="payment-modal-container">
-      <!-- 房屋信息头部 -->
-      <div class="payment-header">
-        <div class="house-info">
-          <icon-money-circle class="header-icon" />
-          <div class="house-details">
-            <h3>{{ houseData?.name || '' }}</h3>
-            <p>管理该房屋的收款记录和相关费用</p>
-          </div>
-        </div>
-      </div>
+     
 
       <!-- 收款管理内容区域 -->
       <div class="payment-content">
@@ -102,6 +93,94 @@
                   发送提醒
                 </a-button>
               </div>
+
+              <!-- 实际收费金额输入区域 -->
+              <div class="actual-payment-input">
+                <a-divider style="margin: 16px 0 12px 0;">实际收费金额</a-divider>
+
+                <div class="input-item">
+                  <div class="input-label">租金：</div>
+                  <div class="input-content">
+                    <a-input-number
+                      v-model="actualPayments.rent"
+                      :precision="2"
+                      :min="0"
+                      placeholder="请输入实际租金"
+                      size="small"
+                      style="width: 120px;"
+                    />
+                    <span class="expected-amount">应收：¥{{ expectedPayments.rent.toFixed(2) }}</span>
+                    <span
+                      :class="['difference', paymentDifferences.rent > 0 ? 'positive' : paymentDifferences.rent < 0 ? 'negative' : '']"
+                    >
+                      {{ paymentDifferences.rent > 0 ? '+' : '' }}¥{{ Math.abs(paymentDifferences.rent).toFixed(2) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="input-item">
+                  <div class="input-label">水费：</div>
+                  <div class="input-content">
+                    <a-input-number
+                      v-model="actualPayments.water"
+                      :precision="2"
+                      :min="0"
+                      placeholder="请输入实际水费"
+                      size="small"
+                      style="width: 120px;"
+                    />
+                    <span class="expected-amount">应收：¥{{ expectedPayments.water.toFixed(2) }}</span>
+                    <span
+                      :class="['difference', paymentDifferences.water > 0 ? 'positive' : paymentDifferences.water < 0 ? 'negative' : '']"
+                    >
+                      {{ paymentDifferences.water > 0 ? '+' : '' }}¥{{ Math.abs(paymentDifferences.water).toFixed(2) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="input-item">
+                  <div class="input-label">电费：</div>
+                  <div class="input-content">
+                    <a-input-number
+                      v-model="actualPayments.electricity"
+                      :precision="2"
+                      :min="0"
+                      placeholder="请输入实际电费"
+                      size="small"
+                      style="width: 120px;"
+                    />
+                    <span class="expected-amount">应收：¥{{ expectedPayments.electricity.toFixed(2) }}</span>
+                    <span
+                      :class="['difference', paymentDifferences.electricity > 0 ? 'positive' : paymentDifferences.electricity < 0 ? 'negative' : '']"
+                    >
+                      {{ paymentDifferences.electricity > 0 ? '+' : '' }}¥{{ Math.abs(paymentDifferences.electricity).toFixed(2) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="input-total">
+                  <div class="total-label">合计：</div>
+                  <div class="total-content">
+                    <span class="actual-total">实收：¥{{ totalActual.toFixed(2) }}</span>
+                    <span class="expected-total">应收：¥{{ totalExpected.toFixed(2) }}</span>
+                    <span
+                      :class="['total-difference', totalDifference > 0 ? 'positive' : totalDifference < 0 ? 'negative' : '']"
+                    >
+                      {{ totalDifference > 0 ? '+' : '' }}¥{{ Math.abs(totalDifference).toFixed(2) }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="notes-item">
+                  <div class="notes-label">备注：</div>
+                  <a-textarea
+                    v-model="actualPayments.notes"
+                    placeholder="请输入收费备注信息"
+                    :auto-size="{ minRows: 2, maxRows: 4 }"
+                    size="small"
+                  />
+                </div>
+              </div>
             </a-card>
           </a-col>
         </a-row>
@@ -129,7 +208,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 // Props定义
 interface Props {
@@ -153,6 +232,39 @@ const emit = defineEmits<Emits>()
 // 状态数据
 const loading = ref(false)
 const houseData = ref(props.house)
+
+// 实际收费金额数据
+const actualPayments = ref({
+  rent: 2500.00,
+  water: 125.30,
+  electricity: 195.20,
+  notes: ''
+})
+
+// 应收金额（固定值）
+const expectedPayments = {
+  rent: 2500.00,
+  water: 125.30,
+  electricity: 195.20
+}
+
+// 计算差额
+const paymentDifferences = computed(() => ({
+  rent: actualPayments.value.rent - expectedPayments.rent,
+  water: actualPayments.value.water - expectedPayments.water,
+  electricity: actualPayments.value.electricity - expectedPayments.electricity
+}))
+
+// 计算总计
+const totalExpected = computed(() =>
+  expectedPayments.rent + expectedPayments.water + expectedPayments.electricity
+)
+
+const totalActual = computed(() =>
+  actualPayments.value.rent + actualPayments.value.water + actualPayments.value.electricity
+)
+
+const totalDifference = computed(() => totalActual.value - totalExpected.value)
 
 // 收款记录表格列配置
 const historyColumns = [
@@ -246,13 +358,26 @@ const handleSave = async () => {
 
   loading.value = true
   try {
+    // 构建保存数据
+    const paymentData = {
+      houseId: houseData.value.id,
+      expectedPayments,
+      actualPayments: actualPayments.value,
+      differences: paymentDifferences.value,
+      totals: {
+        expected: totalExpected.value,
+        actual: totalActual.value,
+        difference: totalDifference.value
+      }
+    }
+
     // 这里应该调用API保存数据
-    console.log('收款管理操作:', { houseId: houseData.value.id })
+    console.log('收款管理操作:', paymentData)
 
     // 模拟API调用
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    emit('success', { houseId: houseData.value.id })
+    emit('success', paymentData)
     handleCancel()
   } catch (error) {
     console.error('收款管理操作失败:', error)
@@ -271,6 +396,14 @@ const handleCancel = () => {
   emit('update:visible', false)
   loading.value = false
   houseData.value = null
+
+  // 重置实际收费金额数据
+  actualPayments.value = {
+    rent: 2500.00,
+    water: 125.30,
+    electricity: 195.20,
+    notes: ''
+  }
 }
 </script>
 
@@ -408,6 +541,115 @@ const handleCancel = () => {
       justify-content: center;
     }
 
+    .actual-payment-input {
+      margin-top: 16px;
+      padding: 12px;
+      background: #fafafa;
+      border-radius: 6px;
+      border: 1px solid #f0f0f0;
+
+      .input-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+
+        .input-label {
+          width: 60px;
+          font-size: 12px;
+          color: #666;
+          font-weight: 500;
+        }
+
+        .input-content {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .expected-amount {
+            font-size: 12px;
+            color: #999;
+          }
+
+          .difference {
+            font-size: 12px;
+            font-weight: 500;
+
+            &.positive {
+              color: #f5222d;
+            }
+
+            &.negative {
+              color: #52c41a;
+            }
+          }
+        }
+      }
+
+      .input-total {
+        display: flex;
+        align-items: center;
+        margin: 12px 0 8px 0;
+        padding-top: 8px;
+        border-top: 1px solid #e8e8e8;
+
+        .total-label {
+          width: 60px;
+          font-size: 12px;
+          color: #333;
+          font-weight: 600;
+        }
+
+        .total-content {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+
+          .actual-total {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1890ff;
+          }
+
+          .expected-total {
+            font-size: 12px;
+            color: #999;
+          }
+
+          .total-difference {
+            font-size: 14px;
+            font-weight: 600;
+
+            &.positive {
+              color: #f5222d;
+            }
+
+            &.negative {
+              color: #52c41a;
+            }
+          }
+        }
+      }
+
+      .notes-item {
+        display: flex;
+        margin-top: 8px;
+
+        .notes-label {
+          width: 60px;
+          font-size: 12px;
+          color: #666;
+          font-weight: 500;
+          padding-top: 4px;
+        }
+
+        .arco-textarea-wrapper {
+          flex: 1;
+        }
+      }
+    }
+
     .payment-history {
       margin-top: 20px;
     }
@@ -456,6 +698,67 @@ const handleCancel = () => {
 
       .detail-item {
         font-size: 11px;
+      }
+    }
+
+    .actual-payment-input {
+      padding: 8px;
+
+      .input-item {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 12px;
+
+        .input-label {
+          width: auto;
+          margin-bottom: 4px;
+        }
+
+        .input-content {
+          width: 100%;
+          flex-wrap: wrap;
+          gap: 4px;
+
+          .arco-input-number {
+            flex: 1;
+            min-width: 100px;
+          }
+
+          .expected-amount,
+          .difference {
+            font-size: 11px;
+          }
+        }
+      }
+
+      .input-total {
+        flex-direction: column;
+        align-items: flex-start;
+
+        .total-label {
+          width: auto;
+          margin-bottom: 4px;
+        }
+
+        .total-content {
+          width: 100%;
+          flex-wrap: wrap;
+          gap: 6px;
+
+          span {
+            font-size: 12px;
+          }
+        }
+      }
+
+      .notes-item {
+        flex-direction: column;
+
+        .notes-label {
+          width: auto;
+          margin-bottom: 4px;
+          padding-top: 0;
+        }
       }
     }
   }
