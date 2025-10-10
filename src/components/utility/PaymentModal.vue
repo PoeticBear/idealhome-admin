@@ -37,8 +37,50 @@
                 <span class="amount">¥2,500.00</span>
               </div>
               <div class="payment-item">
-                <span class="label">水电费：</span>
-                <span class="amount">¥320.50</span>
+                <span class="label">水费：</span>
+                <span class="amount water">¥125.30</span>
+              </div>
+              <!-- 水费明细 -->
+              <div class="payment-detail water-detail">
+                <div class="detail-item">
+                  <span class="detail-label">单价：</span>
+                  <span class="detail-value">¥4.50/吨</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">起数：</span>
+                  <span class="detail-value">125.8</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">止数：</span>
+                  <span class="detail-value">153.7</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">用量：</span>
+                  <span class="detail-value">27.9吨</span>
+                </div>
+              </div>
+              <div class="payment-item">
+                <span class="label">电费：</span>
+                <span class="amount electricity">¥195.20</span>
+              </div>
+              <!-- 电费明细 -->
+              <div class="payment-detail electricity-detail">
+                <div class="detail-item">
+                  <span class="detail-label">单价：</span>
+                  <span class="detail-value">¥0.68/度</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">起数：</span>
+                  <span class="detail-value">1,248</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">止数：</span>
+                  <span class="detail-value">1,535</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">用量：</span>
+                  <span class="detail-value">287度</span>
+                </div>
               </div>
               <div class="payment-item total">
                 <span class="label">合计：</span>
@@ -115,18 +157,28 @@ const houseData = ref(props.house)
 // 收款记录表格列配置
 const historyColumns = [
   {
-    title: '日期',
-    dataIndex: 'date',
-    width: 120
-  },
-  {
-    title: '项目',
-    dataIndex: 'item',
+    title: '月份',
+    dataIndex: 'month',
     width: 100
   },
   {
-    title: '金额',
-    dataIndex: 'amount',
+    title: '租金',
+    dataIndex: 'rent',
+    width: 100
+  },
+  {
+    title: '水费',
+    dataIndex: 'water',
+    width: 100
+  },
+  {
+    title: '电费',
+    dataIndex: 'electricity',
+    width: 100
+  },
+  {
+    title: '合计',
+    dataIndex: 'total',
     width: 100
   },
   {
@@ -144,25 +196,40 @@ const historyColumns = [
 // 模拟收款记录数据
 const historyData = [
   {
-    date: '2024-01-05',
-    item: '租金',
-    amount: '¥2,500.00',
+    month: '2024年1月',
+    rent: '¥2,500.00',
+    water: '¥125.30',
+    electricity: '¥195.20',
+    total: '¥2,820.50',
     status: '已缴',
-    notes: '按时缴纳'
+    notes: '12月份费用，按时缴纳'
   },
   {
-    date: '2024-01-05',
-    item: '水电费',
-    amount: '¥285.30',
+    month: '2023年12月',
+    rent: '¥2,500.00',
+    water: '¥98.60',
+    electricity: '¥186.70',
+    total: '¥2,785.30',
     status: '已缴',
-    notes: '12月水电费'
+    notes: '11月份费用，按时缴纳'
   },
   {
-    date: '2023-12-05',
-    item: '租金',
-    amount: '¥2,500.00',
+    month: '2023年11月',
+    rent: '¥2,500.00',
+    water: '¥112.40',
+    electricity: '¥203.80',
+    total: '¥2,816.20',
     status: '已缴',
-    notes: '按时缴纳'
+    notes: '10月份费用，按时缴纳'
+  },
+  {
+    month: '2023年10月',
+    rent: '¥2,500.00',
+    water: '¥87.20',
+    electricity: '¥175.60',
+    total: '¥2,762.80',
+    status: '已缴',
+    notes: '9月份费用，按时缴纳'
   }
 ]
 
@@ -257,6 +324,14 @@ const handleCancel = () => {
       .amount {
         font-weight: 600;
         color: #1890ff;
+
+        &.water {
+          color: #1890ff;
+        }
+
+        &.electricity {
+          color: #faad14;
+        }
       }
 
       &.total {
@@ -272,6 +347,47 @@ const handleCancel = () => {
         .total-amount {
           font-size: 16px;
           color: #f5222d;
+        }
+      }
+    }
+
+    .payment-detail {
+      margin-left: 45px;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border-left: 3px solid;
+
+      &.water-detail {
+        border-left-color: #1890ff;
+        background: #f0f9ff;
+      }
+
+      &.electricity-detail {
+        border-left-color: #faad14;
+        background: #fffbe6;
+      }
+
+      .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+        font-size: 12px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .detail-label {
+          color: #666;
+          font-weight: 400;
+        }
+
+        .detail-value {
+          color: #333;
+          font-weight: 500;
         }
       }
     }
@@ -331,6 +447,15 @@ const handleCancel = () => {
         .arco-btn {
           width: 100%;
         }
+      }
+    }
+
+    .payment-detail {
+      margin-left: 0;
+      margin-bottom: 8px;
+
+      .detail-item {
+        font-size: 11px;
       }
     }
   }
