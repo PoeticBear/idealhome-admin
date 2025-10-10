@@ -44,6 +44,12 @@
           </template>
           新增房屋
         </a-button>
+        <a-button @click="openIncomeExpenseModal">
+          <template #icon>
+            <icon-bar-chart />
+          </template>
+          收支详情
+        </a-button>
       </div>
       <div class="operations-right">
         <a-radio-group v-model="viewMode" type="button" size="small">
@@ -1498,6 +1504,13 @@
       @success="handlePaymentSuccess"
     />
 
+    <!-- 收支详情弹窗组件 -->
+    <IncomeExpenseModal
+      :visible="showIncomeExpenseModal"
+      :houses="houseList"
+      @update:visible="showIncomeExpenseModal = $event"
+    />
+
   </template>
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
@@ -1518,6 +1531,7 @@ import {
 import UtilityModal from '@/components/utility/UtilityModal.vue';
 import BatchUtilityModal from '@/components/utility/BatchUtilityModal.vue';
 import PaymentModal from '@/components/utility/PaymentModal.vue';
+import IncomeExpenseModal from '@/components/utility/IncomeExpenseModal.vue';
 
 const store = storeToRefs(useStore());
 
@@ -1617,7 +1631,7 @@ const districtList = ref<any[]>([]);
 const cityCodeLoading = ref(false);
 
 // 视图模式状态管理
-const viewMode = ref<'table' | 'card'>('table');
+const viewMode = ref<'table' | 'card'>('card');
 
 // 获取户型标签
 const getHouseTypeLabel = (value: number) => {
@@ -1810,6 +1824,9 @@ const showBatchUtilityModal = ref(false);
 
 // 收款管理弹窗状态
 const showPaymentModal = ref(false);
+
+// 收支详情弹窗状态
+const showIncomeExpenseModal = ref(false);
 
 // 月结日选项
 const paymentDayOptions = [
@@ -2254,6 +2271,11 @@ const showAddModal = () => {
   districtList.value = [];
 
   showAddModel.value = true;
+};
+
+// 显示收支详情弹窗
+const openIncomeExpenseModal = () => {
+  showIncomeExpenseModal.value = true;
 };
 
 // 取消新增
