@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="house-list-container">
     <!-- 搜索筛选区域已隐藏 -->
     <!-- 暂时完全移除搜索表单以避免v-model触发问题 -->
     <!--
@@ -1478,7 +1478,7 @@
       </div>
     </a-modal>
 
-    </div>
+  </div>
 
     <!-- 水电录入弹窗组件 -->
     <UtilityModal
@@ -2906,6 +2906,26 @@ const saveCheckin = async () => {
 };
 </script>
 <style scoped lang="scss">
+// 页面主容器宽度优化
+.house-list-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+
+  @media (max-width: 1440px) {
+    max-width: 1200px;
+  }
+
+  @media (max-width: 1200px) {
+    max-width: 100%;
+    padding: 0 16px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 12px;
+  }
+}
+
 // 紧凑型信息区域样式
 .info-section {
   margin-bottom: 8px;
@@ -3071,24 +3091,33 @@ const saveCheckin = async () => {
 
 // 弹窗样式优化
 :deep(.arco-modal) {
+  // 大屏幕弹窗宽度优化
+  @media (min-width: 1600px) {
+    width: 1400px !important;
+  }
+
+  @media (min-width: 1200px) and (max-width: 1599px) {
+    width: 1100px !important;
+  }
+
   .arco-modal-body {
     max-height: 85vh;
     overflow-y: auto;
-    padding: 16px 20px;
+    padding: 20px 24px;
   }
 
   .arco-modal-header {
     border-bottom: 1px solid var(--color-border-2);
-    padding: 16px 20px;
+    padding: 20px 24px;
   }
 
   .arco-modal-title {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
   }
 
   .arco-modal-footer {
-    padding: 12px 20px;
+    padding: 16px 24px;
     border-top: 1px solid var(--color-border-2);
   }
 }
@@ -3176,6 +3205,18 @@ const saveCheckin = async () => {
 @media (max-width: 1200px) {
   :deep(.arco-modal) {
     width: 95% !important;
+
+    .arco-modal-body {
+      padding: 16px 20px;
+    }
+
+    .arco-modal-header {
+      padding: 16px 20px;
+    }
+
+    .arco-modal-footer {
+      padding: 12px 20px;
+    }
   }
 }
 
@@ -3334,7 +3375,9 @@ const saveCheckin = async () => {
 .table-operations {
   margin-bottom: 16px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
 
   .arco-btn {
     display: flex;
@@ -3369,6 +3412,15 @@ const saveCheckin = async () => {
 // 卡片视图样式
 .card-view-container {
   margin-bottom: 20px;
+
+  // 优化卡片网格布局
+  :deep(.arco-row) {
+    margin: 0 -8px; // 抵消列的间距
+
+    .arco-col {
+      padding: 0 8px; // 列间距
+    }
+  }
 }
 
 .card-pagination {
@@ -3621,10 +3673,15 @@ const saveCheckin = async () => {
 
 // 卡片视图响应式设计
 @media (max-width: 768px) {
+  .house-list-container {
+    padding: 0 8px;
+  }
+
   .table-operations {
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
+    padding: 0;
 
     .operations-left {
       justify-content: center;

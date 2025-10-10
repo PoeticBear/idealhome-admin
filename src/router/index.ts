@@ -55,7 +55,7 @@ export const routes = [
       {
         path: 'houseList',
         name: 'houseListChild',
-        component: () => import('@/views/house/houseList.vue'),
+        component: () => import('@/views/house/index.vue'),
         meta: {
           title: '房屋列表'
         }

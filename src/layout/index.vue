@@ -4,7 +4,8 @@
       <Navbar @switch-menu-drawer="switchMenuDrawer" />
     </a-layout-header>
     <a-layout class="layout-middle-content">
-      <a-layout-sider v-if="!store.isMobile" class="layout-sider" :collapsed="store.collapsedFlag">
+      <!-- 注释掉侧边栏 -->
+      <!-- <a-layout-sider v-if="!store.isMobile" class="layout-sider" :collapsed="store.collapsedFlag">
         <div class="layout-sider-view">
           <Sider />
         </div>
@@ -16,7 +17,7 @@
         :width="200"
       >
         <Sider @menu-click="menuDrawer = false" />
-      </a-drawer>
+      </a-drawer> -->
       <a-layout-content class="layout-content">
         <!-- <RouterTabs /> -->
         <Content />
