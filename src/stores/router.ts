@@ -41,7 +41,7 @@ export default defineStore('routerStore', {
         if (data.index === 0) {
           // 路由跳转
           $router.push({
-            path: '/home/index'
+            path: '/houseList/houseList'
           })
         } else {
           // 路由跳转

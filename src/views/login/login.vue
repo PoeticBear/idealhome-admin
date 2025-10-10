@@ -75,7 +75,7 @@ const handleSubmit = () => {
         Message.success('登录成功！')
         await localStorage.setItem('token', data)
         await userStore.getUserInfo()
-        await router.replace('/home/index')
+        await router.replace('/houseList/houseList')
       }
     })
     .finally(() => {

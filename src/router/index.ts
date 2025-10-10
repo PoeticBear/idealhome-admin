@@ -5,7 +5,7 @@ export const routes = [
   {
     path: '/',
     name: 'index',
-    redirect: '/home/index',
+    redirect: '/houseList/houseList',
     meta: {
       hideInMenu: true
     }
@@ -28,7 +28,8 @@ export const routes = [
     redirect: '/home/index',
     meta: {
       icon: 'icon-command',
-      title: '首页'
+      title: '首页',
+      hideInMenu: true
     },
     children: [
       {

@@ -15,7 +15,7 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const back = () => {
-  router.push('/home/index');
+  router.push('/houseList/houseList');
 };
 </script>
 

@@ -1,12 +1,6 @@
 <template>
   <div class="root-view">
     <a-tag
-      class="cursor router-tag-item" :bordered="$route.path === '/home/index'" color="blue"
-      @click="toPath('/home/index')"
-    >
-      首页
-    </a-tag>
-    <a-tag
       v-for="(item, index) in store.historyRouter" :key="item.name" class="cursor router-tag-item"
       :bordered="$route.path === item.path" color="blue"
       closable @close="tagClose(item, index)" @click="toPath(item.fullPath)"

@@ -39,8 +39,7 @@ export default (router: Router) => {
   router.afterEach((to) => {
     const routerStore = useRouterStore()
     if (
-      to.path !== '/login' &&
-      to.path !== '/home/index'
+      to.path !== '/login'
     ) {
       const data: any = to
       data.title = data.meta.title

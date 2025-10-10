@@ -18,7 +18,7 @@
         <Sider @menu-click="menuDrawer = false" />
       </a-drawer>
       <a-layout-content class="layout-content">
-        <RouterTabs />
+        <!-- <RouterTabs /> -->
         <Content />
       </a-layout-content>
     </a-layout>
@@ -32,7 +32,7 @@ import appStore from '@/stores/index'
 import Navbar from './components/Navbar.vue'
 import Sider from './components/Sider.vue'
 import Content from './components/Content.vue'
-import RouterTabs from './components/RouterTags.vue'
+// import RouterTabs from './components/RouterTags.vue'
 
 const store = appStore()
 
