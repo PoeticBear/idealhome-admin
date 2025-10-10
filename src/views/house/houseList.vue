@@ -207,6 +207,17 @@
                   </template>
                   录入水电
                 </a-button>
+                <a-button
+                  type="primary"
+                  size="small"
+                  class="batch-utility-btn"
+                  @click="handleShowBatchUtilityModal"
+                >
+                  <template #icon>
+                    <icon-thunderbolt />
+                  </template>
+                  批量录入
+                </a-button>
               </div>
             </div>
           </a-card>
@@ -1460,6 +1471,14 @@
       @success="handleUtilitySuccess"
     />
 
+    <!-- 批量水电录入弹窗组件 -->
+    <BatchUtilityModal
+      :visible="showBatchUtilityModal"
+      :houses="houseList"
+      @update:visible="showBatchUtilityModal = $event"
+      @success="handleBatchUtilitySuccess"
+    />
+
   </template>
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
@@ -1478,6 +1497,7 @@ import {
   getTenantDetailByHouseId
 } from '@/api/lease';
 import UtilityModal from '@/components/utility/UtilityModal.vue';
+import BatchUtilityModal from '@/components/utility/BatchUtilityModal.vue';
 
 const store = storeToRefs(useStore());
 
@@ -1764,6 +1784,9 @@ let tenantDetailData: any = reactive({});
 // 水电录入弹窗状态
 const showUtilityModal = ref(false);
 const selectedHouse = ref(null);
+
+// 批量水电录入弹窗状态
+const showBatchUtilityModal = ref(false);
 
 // 月结日选项
 const paymentDayOptions = [
@@ -2597,6 +2620,21 @@ const handleUtilitySuccess = (data: any) => {
   Message.success('水电费用录入成功！');
   showUtilityModal.value = false;
   selectedHouse.value = null;
+};
+
+// 显示批量水电录入弹窗
+const handleShowBatchUtilityModal = () => {
+  showBatchUtilityModal.value = true;
+};
+
+// 处理批量水电录入成功
+const handleBatchUtilitySuccess = (data: any) => {
+  console.log('批量水电录入成功:', data);
+  Message.success(`批量水电费用录入成功！共录入 ${data.length} 套房屋的费用信息`);
+  showBatchUtilityModal.value = false;
+
+  // 这里可以添加刷新列表或其他后续操作
+  // getHouseList(); // 如果需要刷新房屋列表
 };
 
 // 获取月结日标签
@@ -3659,7 +3697,10 @@ const saveCheckin = async () => {
     }
 
     .utility-section {
-      .utility-btn {
+      display: flex;
+      gap: 8px;
+
+      .utility-btn, .batch-utility-btn {
         height: 30px;
         font-size: 11px;
       }
