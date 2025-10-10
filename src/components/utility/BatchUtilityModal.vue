@@ -3,7 +3,7 @@
     :visible="visible"
     title="批量水电录入"
     title-align="start"
-    width="1800px"
+    width="1600px"
     :mask-closable="false"
     @update:visible="handleVisibleChange"
     @cancel="handleCancel"
@@ -160,18 +160,16 @@
             <thead>
               <tr class="first-header-row">
                 <th rowspan="2" class="house-name-header">房屋名称</th>
-                <th v-for="type in utilityTypes" :key="type.key" :colspan="5" class="utility-header">
+                <th v-for="type in utilityTypes" :key="type.key" :colspan="4" class="utility-header">
                   {{ type.name }}
                 </th>
-                <th rowspan="2" class="actions-header">操作</th>
-              </tr>
+                </tr>
               <tr class="second-header-row">
                 <template v-for="type in utilityTypes" :key="`sub-${type.key}`">
                   <th>单价</th>
                   <th>起数</th>
                   <th>止数</th>
                   <th>总价</th>
-                  <th>用量时段</th>
                 </template>
               </tr>
             </thead>
@@ -184,7 +182,7 @@
             :columns="bodyColumns"
             :data="tableData"
             :pagination="false"
-            :scroll="{ y: 400 }"
+            :scroll="{ x: 1800, y: 400 }"
             size="small"
             bordered
             :show-header="false"
@@ -206,319 +204,184 @@
             <!-- 水费相关字段 -->
             <!-- 水费单价列 -->
             <template #waterUnitPrice="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].water.unitPrice"
-                :precision="2"
-                :min="0"
                 placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'water')"
+                @blur="calculateTotalPrice(record.houseId, 'water')"
               />
             </template>
 
             <!-- 水费起数列 -->
             <template #waterStartReading="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].water.startReading"
-                :precision="2"
-                :min="0"
                 placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'water')"
+                @blur="calculateTotalPrice(record.houseId, 'water')"
               />
             </template>
 
             <!-- 水费止数列 -->
             <template #waterEndReading="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].water.endReading"
-                :precision="2"
-                :min="0"
                 placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'water')"
+                @blur="calculateTotalPrice(record.houseId, 'water')"
               />
             </template>
 
             <!-- 水费总价列 -->
             <template #waterTotalPrice="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].water.totalPrice"
-                :precision="2"
-                :min="0"
                 placeholder="0.00"
                 size="small"
                 style="width: 100%"
               />
             </template>
 
-            <!-- 水费用量时段列 -->
-            <template #waterDateRange="{ record }">
-              <div class="date-range-cell">
-                <a-range-picker
-                  v-model="batchData[record.houseId].water.dateRange"
-                  size="small"
-                  style="width: 100%; margin-bottom: 4px;"
-                  @change="handleDateRangeChange(record.houseId, 'water')"
-                />
-                <a-radio-group
-                  v-model="batchData[record.houseId].water.quickPeriod"
-                  size="mini"
-                  @change="handleQuickPeriodChange(record.houseId, 'water')"
-                >
-                  <a-radio value="current">本月</a-radio>
-                  <a-radio value="last">上月</a-radio>
-                  <a-radio value="beforeLast">前两月</a-radio>
-                  <a-radio value="custom">自定义</a-radio>
-                </a-radio-group>
-              </div>
-            </template>
-
+  
             <!-- 电费相关字段 -->
             <!-- 电费单价列 -->
             <template #electricityUnitPrice="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].electricity.unitPrice"
-                :precision="2"
-                :min="0"
                 placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'electricity')"
+                @blur="calculateTotalPrice(record.houseId, 'electricity')"
               />
             </template>
 
             <!-- 电费起数列 -->
             <template #electricityStartReading="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].electricity.startReading"
-                :precision="2"
-                :min="0"
                 placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'electricity')"
+                @blur="calculateTotalPrice(record.houseId, 'electricity')"
               />
             </template>
 
             <!-- 电费止数列 -->
             <template #electricityEndReading="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].electricity.endReading"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'electricity')"
+                @blur="calculateTotalPrice(record.houseId, 'electricity')"
               />
             </template>
 
             <!-- 电费总价列 -->
             <template #electricityTotalPrice="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].electricity.totalPrice"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
               />
             </template>
 
-            <!-- 电费用量时段列 -->
-            <template #electricityDateRange="{ record }">
-              <div class="date-range-cell">
-                <a-range-picker
-                  v-model="batchData[record.houseId].electricity.dateRange"
-                  size="small"
-                  style="width: 100%; margin-bottom: 4px;"
-                  @change="handleDateRangeChange(record.houseId, 'electricity')"
-                />
-                <a-radio-group
-                  v-model="batchData[record.houseId].electricity.quickPeriod"
-                  size="mini"
-                  @change="handleQuickPeriodChange(record.houseId, 'electricity')"
-                >
-                  <a-radio value="current">本月</a-radio>
-                  <a-radio value="last">上月</a-radio>
-                  <a-radio value="beforeLast">前两月</a-radio>
-                  <a-radio value="custom">自定义</a-radio>
-                </a-radio-group>
-              </div>
-            </template>
-
+  
             <!-- 气费相关字段 -->
             <!-- 气费单价列 -->
             <template #gasUnitPrice="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].gas.unitPrice"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'gas')"
+                @blur="calculateTotalPrice(record.houseId, 'gas')"
               />
             </template>
 
             <!-- 气费起数列 -->
             <template #gasStartReading="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].gas.startReading"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'gas')"
+                @blur="calculateTotalPrice(record.houseId, 'gas')"
               />
             </template>
 
             <!-- 气费止数列 -->
             <template #gasEndReading="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].gas.endReading"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'gas')"
+                @blur="calculateTotalPrice(record.houseId, 'gas')"
               />
             </template>
 
             <!-- 气费总价列 -->
             <template #gasTotalPrice="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].gas.totalPrice"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
               />
             </template>
 
-            <!-- 气费用量时段列 -->
-            <template #gasDateRange="{ record }">
-              <div class="date-range-cell">
-                <a-range-picker
-                  v-model="batchData[record.houseId].gas.dateRange"
-                  size="small"
-                  style="width: 100%; margin-bottom: 4px;"
-                  @change="handleDateRangeChange(record.houseId, 'gas')"
-                />
-                <a-radio-group
-                  v-model="batchData[record.houseId].gas.quickPeriod"
-                  size="mini"
-                  @change="handleQuickPeriodChange(record.houseId, 'gas')"
-                >
-                  <a-radio value="current">本月</a-radio>
-                  <a-radio value="last">上月</a-radio>
-                  <a-radio value="beforeLast">前两月</a-radio>
-                  <a-radio value="custom">自定义</a-radio>
-                </a-radio-group>
-              </div>
-            </template>
-
+    
             <!-- 热水费相关字段 -->
             <!-- 热水费单价列 -->
             <template #hotWaterUnitPrice="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].hotWater.unitPrice"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'hotWater')"
+                @blur="calculateTotalPrice(record.houseId, 'hotWater')"
               />
             </template>
 
             <!-- 热水费起数列 -->
             <template #hotWaterStartReading="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].hotWater.startReading"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'hotWater')"
+                @blur="calculateTotalPrice(record.houseId, 'hotWater')"
               />
             </template>
 
             <!-- 热水费止数列 -->
             <template #hotWaterEndReading="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].hotWater.endReading"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
-                @change="calculateTotalPrice(record.houseId, 'hotWater')"
+                @blur="calculateTotalPrice(record.houseId, 'hotWater')"
               />
             </template>
 
             <!-- 热水费总价列 -->
             <template #hotWaterTotalPrice="{ record }">
-              <a-input-number
+              <a-input
                 v-model="batchData[record.houseId].hotWater.totalPrice"
-                :precision="2"
-                :min="0"
-                placeholder="0.00"
+                                placeholder="0.00"
                 size="small"
                 style="width: 100%"
               />
             </template>
 
-            <!-- 热水费用量时段列 -->
-            <template #hotWaterDateRange="{ record }">
-              <div class="date-range-cell">
-                <a-range-picker
-                  v-model="batchData[record.houseId].hotWater.dateRange"
-                  size="small"
-                  style="width: 100%; margin-bottom: 4px;"
-                  @change="handleDateRangeChange(record.houseId, 'hotWater')"
-                />
-                <a-radio-group
-                  v-model="batchData[record.houseId].hotWater.quickPeriod"
-                  size="mini"
-                  @change="handleQuickPeriodChange(record.houseId, 'hotWater')"
-                >
-                  <a-radio value="current">本月</a-radio>
-                  <a-radio value="last">上月</a-radio>
-                  <a-radio value="beforeLast">前两月</a-radio>
-                  <a-radio value="custom">自定义</a-radio>
-                </a-radio-group>
-              </div>
-            </template>
-
-            <!-- 操作列 -->
-            <template #actions="{ record }">
-              <a-space>
-                <a-button
-                  type="text"
-                  size="small"
-                  @click="handleCopyToOther(record.houseId)"
-                >
-                  复制
-                </a-button>
-                <a-button
-                  type="text"
-                  size="small"
-                  @click="handleClearHouse(record.houseId)"
-                >
-                  清空
-                </a-button>
-              </a-space>
-            </template>
-          </a-table>
+      
+                      </a-table>
         </div>
       </div>
 
@@ -648,7 +511,7 @@ const createBodyColumns = () => {
     {
       title: '房屋名称',
       dataIndex: 'houseName',
-      width: 150,
+      width: 120,
       fixed: 'left',
       slotName: 'houseName'
     }
@@ -661,50 +524,35 @@ const createBodyColumns = () => {
       {
         title: '单价',
         dataIndex: `${type.key}UnitPrice`,
-        width: 120,
+        width: 85,
         slotName: `${type.key}UnitPrice`,
         align: 'center'
       },
       {
         title: '起数',
         dataIndex: `${type.key}StartReading`,
-        width: 120,
+        width: 85,
         slotName: `${type.key}StartReading`,
         align: 'center'
       },
       {
         title: '止数',
         dataIndex: `${type.key}EndReading`,
-        width: 120,
+        width: 85,
         slotName: `${type.key}EndReading`,
         align: 'center'
       },
       {
         title: '总价',
         dataIndex: `${type.key}TotalPrice`,
-        width: 120,
+        width: 95,
         slotName: `${type.key}TotalPrice`,
-        align: 'center'
-      },
-        {
-        title: '用量时段',
-        dataIndex: `${type.key}DateRange`,
-        width: 180,
-        slotName: `${type.key}DateRange`,
         align: 'center'
       }
     )
   })
 
-  // 操作列
-  columns.push({
-    title: '操作',
-    dataIndex: 'actions',
-    width: 120,
-    slotName: 'actions',
-    fixed: 'right'
-  })
-
+  
   return columns
 }
 
@@ -738,10 +586,6 @@ const tableData = computed(() => {
       houseRow[`${type.key}EndReading`] = utilityData.endReading
       // 总价
       houseRow[`${type.key}TotalPrice`] = utilityData.totalPrice
-            // 用量时段
-      houseRow[`${type.key}DateRange`] = utilityData.dateRange
-      // 快速时段
-      houseRow[`${type.key}QuickPeriod`] = utilityData.quickPeriod
     })
 
     data.push(houseRow)
@@ -967,7 +811,7 @@ const handleBatchClear = () => {
         batchData[house.id][type.key].startReading = null
         batchData[house.id][type.key].endReading = null
         batchData[house.id][type.key].totalPrice = null
-              })
+      })
     }
   })
 }
@@ -1026,14 +870,13 @@ const handleBatchCopyFirst = () => {
         target.startReading = source.startReading
         target.endReading = source.endReading
         target.totalPrice = source.totalPrice
-                target.dateRange = [...source.dateRange]
-        target.quickPeriod = source.quickPeriod
 
         // 如果有起数和止数，重新计算总价
-        if (source.startReading !== null && source.endReading !== null) {
-          const usage = source.endReading - source.startReading
-          if (usage > 0 && source.unitPrice !== null) {
-            target.totalPrice = parseFloat((usage * source.unitPrice).toFixed(2))
+        if (source.startReading !== null && source.startReading !== '' &&
+            source.endReading !== null && source.endReading !== '') {
+          const usage = parseFloat(source.endReading) - parseFloat(source.startReading)
+          if (usage > 0 && source.unitPrice !== null && source.unitPrice !== '') {
+            target.totalPrice = parseFloat((usage * parseFloat(source.unitPrice)).toFixed(2))
           }
         }
       })
@@ -1054,15 +897,6 @@ const getFieldName = (field: string) => {
   return fieldNames[field] || field
 }
 
-const handleDateRangeChange = (houseId: string, itemType: string) => {
-  if (batchData[houseId] && batchData[houseId][itemType]) {
-    batchData[houseId][itemType].quickPeriod = 'custom'
-  }
-}
-
-const handleQuickPeriodChange = (houseId: string, itemType: string) => {
-  // 可以在这里处理单个房屋的快速时段变更
-}
 
 const handleCopyToOther = (sourceHouseId: string) => {
   const sourceHouse = selectedHouses.value.find(h => h.id === sourceHouseId)
@@ -1078,8 +912,6 @@ const handleCopyToOther = (sourceHouseId: string) => {
         target.startReading = source.startReading
         target.endReading = source.endReading
         target.totalPrice = source.totalPrice
-                target.dateRange = [...source.dateRange]
-        target.quickPeriod = source.quickPeriod
       })
     }
   })
@@ -1092,7 +924,6 @@ const handleClearHouse = (houseId: string) => {
       batchData[houseId][type.key].startReading = null
       batchData[houseId][type.key].endReading = null
       batchData[houseId][type.key].totalPrice = null
-      batchData[houseId][type.key].notes = ''
     })
   }
 }
@@ -1101,13 +932,21 @@ const calculateTotalPrice = (houseId: string, itemType: string) => {
   if (!batchData[houseId] || !batchData[houseId][itemType]) return
 
   const item = batchData[houseId][itemType]
-  if (item.unitPrice !== null && item.startReading !== null && item.endReading !== null) {
-    const usage = item.endReading - item.startReading
+
+  // 将字符串转换为数字类型
+  const unitPrice = item.unitPrice !== null && item.unitPrice !== '' ? parseFloat(item.unitPrice) : null
+  const startReading = item.startReading !== null && item.startReading !== '' ? parseFloat(item.startReading) : null
+  const endReading = item.endReading !== null && item.endReading !== '' ? parseFloat(item.endReading) : null
+
+  if (unitPrice !== null && startReading !== null && endReading !== null) {
+    const usage = endReading - startReading
     if (usage > 0) {
-      item.totalPrice = parseFloat((usage * item.unitPrice).toFixed(2))
+      item.totalPrice = parseFloat((usage * unitPrice).toFixed(2))
     } else {
       item.totalPrice = null
     }
+  } else {
+    item.totalPrice = null
   }
 }
 
@@ -1221,27 +1060,29 @@ watch(() => props.visible, (newVal) => {
     }
 
     .custom-table-header .house-name-header {
-      width: 150px;
-      min-width: 150px;
-    }
-
-    .custom-table-header .utility-header {
-      width: 540px; // 5列 × 平均宽度 (4×120 + 180)
-      min-width: 540px;
-    }
-
-    .custom-table-header .actions-header {
       width: 120px;
       min-width: 120px;
     }
 
-    .custom-table-header .second-header-row th {
-      width: 120px; // 平均分配每个字段列（除用量时段外）
-      min-width: 120px;
+    .custom-table-header .utility-header {
+      width: 330px; // 单价×85px + 起数×85px + 止数×85px + 总价×95px
+      min-width: 330px;
     }
+
+    
+    .custom-table-header .second-header-row th {
+      &.house-name-header { width: 120px; min-width: 120px; }
+      &.utility-header {
+        // 费用项目下的各个列
+        &:nth-child(2), &:nth-child(3), &:nth-child(4) { width: 85px; min-width: 85px; } // 单价、起数、止数
+        &:nth-child(5) { width: 95px; min-width: 95px; } // 总价
+      }
+          }
 
     .table-body-container {
       // 确保表格主体与自定义表头对齐
+      overflow-x: auto; // 启用水平滚动
+
       :deep(.arco-table) {
         margin-top: 0;
       }
@@ -1258,33 +1099,27 @@ watch(() => props.visible, (newVal) => {
 
       // 设置列宽与自定义表头一致
       :deep(.arco-table-col) {
-        &:nth-child(1) { min-width: 150px; width: 150px; } // 房屋名称
+        &:nth-child(1) { min-width: 120px; width: 120px; } // 房屋名称
         // 水费字段
-        &:nth-child(2) { min-width: 120px; width: 120px; } // 水费单价
-        &:nth-child(3) { min-width: 120px; width: 120px; } // 水费起数
-        &:nth-child(4) { min-width: 120px; width: 120px; } // 水费止数
-        &:nth-child(5) { min-width: 120px; width: 120px; } // 水费总价
-        &:nth-child(6) { min-width: 180px; width: 180px; } // 水费用量时段
+        &:nth-child(2) { min-width: 85px; width: 85px; } // 水费单价
+        &:nth-child(3) { min-width: 85px; width: 85px; } // 水费起数
+        &:nth-child(4) { min-width: 85px; width: 85px; } // 水费止数
+        &:nth-child(5) { min-width: 95px; width: 95px; } // 水费总价
         // 电费字段
-        &:nth-child(7) { min-width: 120px; width: 120px; } // 电费单价
-        &:nth-child(8) { min-width: 120px; width: 120px; } // 电费起数
-        &:nth-child(9) { min-width: 120px; width: 120px; } // 电费止数
-        &:nth-child(10) { min-width: 120px; width: 120px; } // 电费总价
-        &:nth-child(11) { min-width: 180px; width: 180px; } // 电费用量时段
+        &:nth-child(6) { min-width: 85px; width: 85px; } // 电费单价
+        &:nth-child(7) { min-width: 85px; width: 85px; } // 电费起数
+        &:nth-child(8) { min-width: 85px; width: 85px; } // 电费止数
+        &:nth-child(9) { min-width: 95px; width: 95px; } // 电费总价
         // 气费字段
-        &:nth-child(12) { min-width: 120px; width: 120px; } // 气费单价
-        &:nth-child(13) { min-width: 120px; width: 120px; } // 气费起数
-        &:nth-child(14) { min-width: 120px; width: 120px; } // 气费止数
-        &:nth-child(15) { min-width: 120px; width: 120px; } // 气费总价
-        &:nth-child(16) { min-width: 180px; width: 180px; } // 气费用量时段
+        &:nth-child(10) { min-width: 85px; width: 85px; } // 气费单价
+        &:nth-child(11) { min-width: 85px; width: 85px; } // 气费起数
+        &:nth-child(12) { min-width: 85px; width: 85px; } // 气费止数
+        &:nth-child(13) { min-width: 95px; width: 95px; } // 气费总价
         // 热水费字段
-        &:nth-child(17) { min-width: 120px; width: 120px; } // 热水费单价
-        &:nth-child(18) { min-width: 120px; width: 120px; } // 热水费起数
-        &:nth-child(19) { min-width: 120px; width: 120px; } // 热水费止数
-        &:nth-child(20) { min-width: 120px; width: 120px; } // 热水费总价
-        &:nth-child(21) { min-width: 180px; width: 180px; } // 热水费用量时段
-        // 操作列
-        &:nth-child(22) { min-width: 120px; width: 120px; } // 操作
+        &:nth-child(14) { min-width: 85px; width: 85px; } // 热水费单价
+        &:nth-child(15) { min-width: 85px; width: 85px; } // 热水费起数
+        &:nth-child(16) { min-width: 85px; width: 85px; } // 热水费止数
+        &:nth-child(17) { min-width: 95px; width: 95px; } // 热水费总价
       }
     }
 
@@ -1358,6 +1193,7 @@ watch(() => props.visible, (newVal) => {
     // 改进表格单元格样式
     :deep(.arco-table-td) {
       vertical-align: top;
+      padding: 6px 8px; // 减少内边距给输入框更多空间
 
       .house-name-cell {
         display: flex;
@@ -1366,6 +1202,16 @@ watch(() => props.visible, (newVal) => {
         .house-name {
           font-weight: 500;
           color: #1a1a1a;
+        }
+      }
+
+      // 优化输入框样式
+      .arco-input {
+        width: 100% !important;
+
+        .arco-input {
+          padding-left: 8px;
+          padding-right: 8px;
         }
       }
     }
