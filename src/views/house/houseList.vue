@@ -192,6 +192,17 @@
                   </template>
                   查看租客
                 </a-button>
+                <a-button
+                  type="outline"
+                  size="small"
+                  class="payment-btn"
+                  @click="handlePaymentManagement(house)"
+                >
+                  <template #icon>
+                    <icon-money-circle />
+                  </template>
+                  收款管理
+                </a-button>
               </div>
 
               <!-- 水电录入按钮（所有状态显示） -->
@@ -1479,6 +1490,14 @@
       @success="handleBatchUtilitySuccess"
     />
 
+    <!-- 收款管理弹窗组件 -->
+    <PaymentModal
+      :visible="showPaymentModal"
+      :house="selectedHouse"
+      @update:visible="showPaymentModal = $event"
+      @success="handlePaymentSuccess"
+    />
+
   </template>
 <script lang="ts" setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
@@ -1498,6 +1517,7 @@ import {
 } from '@/api/lease';
 import UtilityModal from '@/components/utility/UtilityModal.vue';
 import BatchUtilityModal from '@/components/utility/BatchUtilityModal.vue';
+import PaymentModal from '@/components/utility/PaymentModal.vue';
 
 const store = storeToRefs(useStore());
 
@@ -1787,6 +1807,9 @@ const selectedHouse = ref(null);
 
 // 批量水电录入弹窗状态
 const showBatchUtilityModal = ref(false);
+
+// 收款管理弹窗状态
+const showPaymentModal = ref(false);
 
 // 月结日选项
 const paymentDayOptions = [
@@ -2635,6 +2658,20 @@ const handleBatchUtilitySuccess = (data: any) => {
 
   // 这里可以添加刷新列表或其他后续操作
   // getHouseList(); // 如果需要刷新房屋列表
+};
+
+// 显示收款管理弹窗
+const handlePaymentManagement = (house: any) => {
+  selectedHouse.value = house;
+  showPaymentModal.value = true;
+};
+
+// 处理收款管理成功
+const handlePaymentSuccess = (data: any) => {
+  console.log('收款管理操作成功:', data);
+  Message.success('收款管理操作成功！');
+  showPaymentModal.value = false;
+  selectedHouse.value = null;
 };
 
 // 获取月结日标签
