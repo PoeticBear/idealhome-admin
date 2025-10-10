@@ -3,7 +3,7 @@
     :visible="visible"
     title="批量水电录入"
     title-align="start"
-    width="1600px"
+    width="1800px"
     :mask-closable="false"
     @update:visible="handleVisibleChange"
     @cancel="handleCancel"
@@ -154,35 +154,37 @@
 
       <!-- 自定义双表头表格 -->
       <div v-if="selectedHouses.length > 0" class="utility-table-section">
-        <!-- 自定义表头 -->
-        <div class="custom-table-header">
-          <table class="header-table">
-            <thead>
-              <tr class="first-header-row">
-                <th rowspan="2" class="house-name-header">房屋名称</th>
-                <th v-for="type in utilityTypes" :key="type.key" :colspan="4" class="utility-header">
-                  {{ type.name }}
-                </th>
+        <!-- 统一的滚动容器 -->
+        <div class="table-scroll-container">
+          <!-- 自定义表头 -->
+          <div class="custom-table-header">
+            <table class="header-table">
+              <thead>
+                <tr class="first-header-row">
+                  <th rowspan="2" class="house-name-header">房屋名称</th>
+                  <th v-for="type in utilityTypes" :key="type.key" :colspan="4" class="utility-header">
+                    {{ type.name }}
+                  </th>
+                  </tr>
+                <tr class="second-header-row">
+                  <template v-for="type in utilityTypes" :key="`sub-${type.key}`">
+                    <th>单价</th>
+                    <th>起数</th>
+                    <th>止数</th>
+                    <th>总价</th>
+                  </template>
                 </tr>
-              <tr class="second-header-row">
-                <template v-for="type in utilityTypes" :key="`sub-${type.key}`">
-                  <th>单价</th>
-                  <th>起数</th>
-                  <th>止数</th>
-                  <th>总价</th>
-                </template>
-              </tr>
-            </thead>
-          </table>
-        </div>
+              </thead>
+            </table>
+          </div>
 
-        <!-- 表格主体 -->
-        <div class="table-body-container">
+          <!-- 表格主体 -->
+          <div class="table-body-container">
           <a-table
             :columns="bodyColumns"
             :data="tableData"
             :pagination="false"
-            :scroll="{ x: 1800, y: 400 }"
+            :scroll="{ y: 400 }"
             size="small"
             bordered
             :show-header="false"
@@ -191,13 +193,7 @@
             <template #houseName="{ record }">
               <div class="house-name-cell">
                 <span class="house-name">{{ record.houseName }}</span>
-                <a-tag
-                  :color="getStatusColor(record.status)"
-                  size="small"
-                  style="margin-left: 8px;"
-                >
-                  {{ getStatusText(record.status) }}
-                </a-tag>
+                
               </div>
             </template>
 
@@ -382,6 +378,7 @@
 
       
                       </a-table>
+          </div>
         </div>
       </div>
 
@@ -524,28 +521,28 @@ const createBodyColumns = () => {
       {
         title: '单价',
         dataIndex: `${type.key}UnitPrice`,
-        width: 85,
+        width: 95,
         slotName: `${type.key}UnitPrice`,
         align: 'center'
       },
       {
         title: '起数',
         dataIndex: `${type.key}StartReading`,
-        width: 85,
+        width: 95,
         slotName: `${type.key}StartReading`,
         align: 'center'
       },
       {
         title: '止数',
         dataIndex: `${type.key}EndReading`,
-        width: 85,
+        width: 95,
         slotName: `${type.key}EndReading`,
         align: 'center'
       },
       {
         title: '总价',
         dataIndex: `${type.key}TotalPrice`,
-        width: 95,
+        width: 105,
         slotName: `${type.key}TotalPrice`,
         align: 'center'
       }
@@ -1019,16 +1016,20 @@ watch(() => props.visible, (newVal) => {
   .utility-table-section {
     margin-bottom: 16px;
 
+    // 统一的滚动容器
+    .table-scroll-container {
+      overflow-x: auto; // 启用水平滚动
+      overflow-y: hidden; // 禁用垂直滚动（由表格内部处理）
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      background: #fff;
+    }
+
     // 自定义双表头样式
     .custom-table-header {
       position: relative;
       z-index: 10;
-      margin-bottom: -1px;
       background: #fafafa;
-      border: 1px solid #e8e8e8;
-      border-bottom: none;
-      border-radius: 6px 6px 0 0;
-      overflow: hidden;
     }
 
     .custom-table-header .header-table {
@@ -1065,8 +1066,8 @@ watch(() => props.visible, (newVal) => {
     }
 
     .custom-table-header .utility-header {
-      width: 330px; // 单价×85px + 起数×85px + 止数×85px + 总价×95px
-      min-width: 330px;
+      width: 370px; // 单价×95px + 起数×95px + 止数×95px + 总价×105px
+      min-width: 370px;
     }
 
     
@@ -1074,17 +1075,17 @@ watch(() => props.visible, (newVal) => {
       &.house-name-header { width: 120px; min-width: 120px; }
       &.utility-header {
         // 费用项目下的各个列
-        &:nth-child(2), &:nth-child(3), &:nth-child(4) { width: 85px; min-width: 85px; } // 单价、起数、止数
-        &:nth-child(5) { width: 95px; min-width: 95px; } // 总价
+        &:nth-child(2), &:nth-child(3), &:nth-child(4) { width: 95px; min-width: 95px; } // 单价、起数、止数
+        &:nth-child(5) { width: 105px; min-width: 105px; } // 总价
       }
           }
 
     .table-body-container {
       // 确保表格主体与自定义表头对齐
-      overflow-x: auto; // 启用水平滚动
-
       :deep(.arco-table) {
         margin-top: 0;
+        border: none; // 移除表格边框，由容器统一处理
+        border-radius: 0; // 移除圆角，由容器统一处理
       }
 
       // 隐藏原有表头
@@ -1101,25 +1102,25 @@ watch(() => props.visible, (newVal) => {
       :deep(.arco-table-col) {
         &:nth-child(1) { min-width: 120px; width: 120px; } // 房屋名称
         // 水费字段
-        &:nth-child(2) { min-width: 85px; width: 85px; } // 水费单价
-        &:nth-child(3) { min-width: 85px; width: 85px; } // 水费起数
-        &:nth-child(4) { min-width: 85px; width: 85px; } // 水费止数
-        &:nth-child(5) { min-width: 95px; width: 95px; } // 水费总价
+        &:nth-child(2) { min-width: 95px; width: 95px; } // 水费单价
+        &:nth-child(3) { min-width: 95px; width: 95px; } // 水费起数
+        &:nth-child(4) { min-width: 95px; width: 95px; } // 水费止数
+        &:nth-child(5) { min-width: 105px; width: 105px; } // 水费总价
         // 电费字段
-        &:nth-child(6) { min-width: 85px; width: 85px; } // 电费单价
-        &:nth-child(7) { min-width: 85px; width: 85px; } // 电费起数
-        &:nth-child(8) { min-width: 85px; width: 85px; } // 电费止数
-        &:nth-child(9) { min-width: 95px; width: 95px; } // 电费总价
+        &:nth-child(6) { min-width: 95px; width: 95px; } // 电费单价
+        &:nth-child(7) { min-width: 95px; width: 95px; } // 电费起数
+        &:nth-child(8) { min-width: 95px; width: 95px; } // 电费止数
+        &:nth-child(9) { min-width: 105px; width: 105px; } // 电费总价
         // 气费字段
-        &:nth-child(10) { min-width: 85px; width: 85px; } // 气费单价
-        &:nth-child(11) { min-width: 85px; width: 85px; } // 气费起数
-        &:nth-child(12) { min-width: 85px; width: 85px; } // 气费止数
-        &:nth-child(13) { min-width: 95px; width: 95px; } // 气费总价
+        &:nth-child(10) { min-width: 95px; width: 95px; } // 气费单价
+        &:nth-child(11) { min-width: 95px; width: 95px; } // 气费起数
+        &:nth-child(12) { min-width: 95px; width: 95px; } // 气费止数
+        &:nth-child(13) { min-width: 105px; width: 105px; } // 气费总价
         // 热水费字段
-        &:nth-child(14) { min-width: 85px; width: 85px; } // 热水费单价
-        &:nth-child(15) { min-width: 85px; width: 85px; } // 热水费起数
-        &:nth-child(16) { min-width: 85px; width: 85px; } // 热水费止数
-        &:nth-child(17) { min-width: 95px; width: 95px; } // 热水费总价
+        &:nth-child(14) { min-width: 95px; width: 95px; } // 热水费单价
+        &:nth-child(15) { min-width: 95px; width: 95px; } // 热水费起数
+        &:nth-child(16) { min-width: 95px; width: 95px; } // 热水费止数
+        &:nth-child(17) { min-width: 105px; width: 105px; } // 热水费总价
       }
     }
 
@@ -1208,18 +1209,17 @@ watch(() => props.visible, (newVal) => {
       // 优化输入框样式
       .arco-input {
         width: 100% !important;
-
-        .arco-input {
-          padding-left: 8px;
-          padding-right: 8px;
-        }
       }
-    }
 
-    // 添加表格边框
-    :deep(.arco-table) {
-      border: 1px solid #e8e8e8;
-      border-radius: 6px;
+      .arco-input-wrapper {
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+      }
+
+      .arco-input {
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+      }
     }
   }
 
