@@ -16,6 +16,70 @@
     </template>
 
     <div class="payment-modal-container">
+      <!-- 统计区域 -->
+      <div class="statistics-section">
+        <div class="statistics-header">
+          <span class="statistics-title">收款统计概览</span>
+          <span class="statistics-period">最近{{ statisticsData.totalPeriods }}个月</span>
+        </div>
+        <div class="statistics-grid">
+          <!-- 总应收金额 -->
+          <div class="stat-card">
+            <div class="stat-icon receivable">
+              <icon-calendar />
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">¥{{ statisticsData.totalReceivable.toFixed(2) }}</div>
+              <div class="stat-label">总应收金额</div>
+            </div>
+          </div>
+
+          <!-- 已收金额 -->
+          <div class="stat-card">
+            <div class="stat-icon received">
+              <icon-check-circle />
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">¥{{ statisticsData.totalReceived.toFixed(2) }}</div>
+              <div class="stat-label">已收金额</div>
+            </div>
+          </div>
+
+          <!-- 待收金额 -->
+          <div class="stat-card">
+            <div class="stat-icon pending">
+              <icon-clock-circle />
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">¥{{ statisticsData.totalPending.toFixed(2) }}</div>
+              <div class="stat-label">待收金额</div>
+            </div>
+          </div>
+
+          <!-- 收款率 -->
+          <div class="stat-card">
+            <div class="stat-icon rate">
+              <icon-pie-chart />
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ statisticsData.collectionRate.toFixed(1) }}%</div>
+              <div class="stat-label">收款完成率</div>
+            </div>
+          </div>
+
+          <!-- 欠费周期数 -->
+          <div class="stat-card">
+            <div class="stat-icon overdue">
+              <icon-exclamation-circle />
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ statisticsData.pendingPeriods }}</div>
+              <div class="stat-label">欠费周期</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="payment-layout">
         <!-- 左侧费用周期列表 -->
         <div class="period-sidebar">
@@ -84,7 +148,10 @@
                 placeholder="实际租金"
                 size="small"
               />
-              <span v-else class="actual-amount">¥{{ actualPayments.rent.toFixed(2) }}</span>
+              <span v-else class="actual-amount-with-label">
+                <span class="amount-label">已收：</span>
+                <span class="amount-value">¥{{ actualPayments.rent.toFixed(2) }}</span>
+              </span>
             </div>
           </div>
 
@@ -103,7 +170,10 @@
               placeholder="实际水费"
               size="small"
             />
-            <span v-else class="actual-amount">¥{{ actualPayments.water.toFixed(2) }}</span>
+            <span v-else class="actual-amount-with-label">
+              <span class="amount-label">已收：</span>
+              <span class="amount-value">¥{{ actualPayments.water.toFixed(2) }}</span>
+            </span>
           </div>
         </div>
 
@@ -134,7 +204,10 @@
               placeholder="实际电费"
               size="small"
             />
-            <span v-else class="actual-amount">¥{{ actualPayments.electricity.toFixed(2) }}</span>
+            <span v-else class="actual-amount-with-label">
+              <span class="amount-label">已收：</span>
+              <span class="amount-value">¥{{ actualPayments.electricity.toFixed(2) }}</span>
+            </span>
           </div>
         </div>
 
@@ -345,6 +418,33 @@ const totalActual = computed(() =>
 
 const totalDifference = computed(() => totalActual.value - totalExpected.value)
 
+// 统计数据计算
+const statisticsData = computed(() => {
+  const totalPeriods = paymentPeriods.value.length
+  const paidPeriods = paymentPeriods.value.filter(p => p.status === '已缴').length
+  const pendingPeriods = paymentPeriods.value.filter(p => p.status === '待缴').length
+
+  const totalReceivable = paymentPeriods.value.reduce((sum, period) => sum + period.totalAmount, 0)
+  const totalReceived = paymentPeriods.value
+    .filter(p => p.status === '已缴')
+    .reduce((sum, period) => sum + (period.actualPayments ?
+      period.actualPayments.rent + period.actualPayments.water + period.actualPayments.electricity :
+      period.totalAmount), 0)
+  const totalPending = totalReceivable - totalReceived
+
+  const collectionRate = totalReceivable > 0 ? (totalReceived / totalReceivable * 100) : 0
+
+  return {
+    totalReceivable,
+    totalReceived,
+    totalPending,
+    collectionRate,
+    totalPeriods,
+    paidPeriods,
+    pendingPeriods
+  }
+})
+
 // 收款记录表格列配置
 const historyColumns = [
   {
@@ -541,11 +641,111 @@ const handleCancel = () => {
 
 <style lang="less" scoped>
 .payment-modal-container {
+  // 统计区域样式
+  .statistics-section {
+    margin-bottom: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f6f8fa 0%, #e8f0fe 100%);
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+
+    .statistics-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      .statistics-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      .statistics-period {
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+      }
+    }
+
+    .statistics-grid {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+
+      .stat-card {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #f0f0f0;
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          color: white;
+
+          &.receivable {
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+          }
+
+          &.received {
+            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+          }
+
+          &.pending {
+            background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+          }
+
+          &.rate {
+            background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+          }
+
+          &.overdue {
+            background: linear-gradient(135deg, #f5222d 0%, #cf1322 100%);
+          }
+        }
+
+        .stat-content {
+          flex: 1;
+
+          .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 2px;
+            line-height: 1.2;
+          }
+
+          .stat-label {
+            font-size: 11px;
+            color: #666;
+            font-weight: 500;
+          }
+        }
+      }
+    }
+  }
+
   // 左右两列布局
   .payment-layout {
     display: flex;
     gap: 32px;
-    min-height: 600px;
+    min-height: 520px;
 
     // 左侧费用周期列表
     .period-sidebar {
@@ -620,8 +820,8 @@ const handleCancel = () => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
         border-bottom: 1px solid #f0f0f0;
 
         .header-left {
@@ -653,7 +853,7 @@ const handleCancel = () => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 16px 0;
+        padding: 12px 0;
         border-bottom: 1px solid #f0f0f0;
 
         &:last-child {
@@ -717,15 +917,38 @@ const handleCancel = () => {
             min-width: 120px;
             text-align: right;
           }
+
+          .actual-amount-with-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #1890ff;
+            font-weight: 600;
+            min-width: 140px;
+            text-align: right;
+
+            .amount-label {
+              font-size: 12px;
+              color: #666;
+              font-weight: 500;
+            }
+
+            .amount-value {
+              font-size: 16px;
+              font-weight: 600;
+              color: #1890ff;
+            }
+          }
         }
       }
 
       // 水电用量明细样式
       .utility-detail {
         background: #f8f9fa;
-        padding: 16px;
+        padding: 12px;
         border-radius: 6px;
-        margin: 12px 0 20px 0;
+        margin: 8px 0 16px 0;
         font-size: 13px;
         width: 100%;
         box-sizing: border-box;
@@ -734,7 +957,7 @@ const handleCancel = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
           width: 100%;
 
           &:last-child {
@@ -755,24 +978,24 @@ const handleCancel = () => {
 
       // 备注区域样式
       .notes-section {
-        margin-top: 20px;
+        margin-top: 16px;
 
         .notes-label {
           font-size: 14px;
           font-weight: 500;
           color: #1a1a1a;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .notes-content {
-          padding: 12px 16px;
+          padding: 10px 12px;
           background: #f8f9fa;
           border-radius: 6px;
           border: 1px solid #f0f0f0;
           font-size: 14px;
           color: #333;
           line-height: 1.5;
-          min-height: 60px;
+          min-height: 48px;
           display: flex;
           align-items: center;
         }
