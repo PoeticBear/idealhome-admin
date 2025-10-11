@@ -30,7 +30,7 @@ export function useLocationData() {
         provinceList.value = response.data || [];
         return true;
       } else {
-        Message.error(response.message || '获取省份数据失败');
+        Message.error(String(response.message) || '获取省份数据失败');
         return false;
       }
     } catch (error) {

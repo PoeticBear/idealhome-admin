@@ -138,7 +138,7 @@ export function useTenantManagement() {
       if (response.status === 1) {
         return response.data.url;
       } else {
-        Message.error(response.message || '照片上传失败');
+        Message.error(String(response.message) || '照片上传失败');
         return null;
       }
     } catch (error: any) {
@@ -224,7 +224,7 @@ export function useTenantManagement() {
       } else {
         // API返回失败
         Message.error({
-          content: response.message || '租客入住登记失败',
+          content: String(response.message) || '租客入住登记失败',
           duration: 5000
         });
         return false;

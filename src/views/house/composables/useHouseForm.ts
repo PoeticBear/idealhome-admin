@@ -202,7 +202,7 @@ export function useHouseForm() {
   /**
    * 省份选择变化处理
    */
-  const handleProvinceChange = (value: string, isEdit = false) => {
+  const handleProvinceChange = (value: string | number, isEdit = false) => {
     if (isEdit) {
       editForm.city = '';
       editForm.district = '';
@@ -216,7 +216,7 @@ export function useHouseForm() {
   /**
    * 城市选择变化处理
    */
-  const handleCityChange = (value: string, isEdit = false) => {
+  const handleCityChange = (value: string | number, isEdit = false) => {
     if (isEdit) {
       editForm.district = '';
     } else {

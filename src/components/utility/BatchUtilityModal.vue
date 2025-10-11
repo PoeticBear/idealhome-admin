@@ -835,23 +835,23 @@ const handleBatchFillSample = () => {
 
 // 列级批量填充
 const handleBatchColumnFill = () => {
-  if (!batchTools.targetUtilityType || !batchTools.targetField) return
+  if (!batchTools.value.targetUtilityType || !batchTools.value.targetField) return
 
   selectedHouses.value.forEach(house => {
-    if (batchData[house.id] && batchData[house.id][batchTools.targetUtilityType]) {
-      const targetField = batchTools.targetField
-      batchData[house.id][batchTools.targetUtilityType][targetField] = batchTools.targetValue
+    if (batchData[house.id] && batchData[house.id][batchTools.value.targetUtilityType]) {
+      const targetField = batchTools.value.targetField
+      batchData[house.id][batchTools.value.targetUtilityType][targetField] = batchTools.value.targetValue
 
       // 如果设置了单价或起数止数，自动计算总价
       if (targetField === 'unitPrice' || targetField === 'startReading' || targetField === 'endReading') {
-        calculateTotalPrice(house.id, batchTools.targetUtilityType)
+        calculateTotalPrice(house.id, batchTools.value.targetUtilityType)
       }
     }
   })
 
   // 清空批量工具值
-  batchTools.targetValue = null
-  Message.success(`已将${batchTools.targetUtilityType}的${getFieldName(batchTools.targetField)}批量应用到所有房屋`)
+  batchTools.value.targetValue = null
+  Message.success(`已将${batchTools.value.targetUtilityType}的${getFieldName(batchTools.value.targetField)}批量应用到所有房屋`)
 }
 
 // 复制第一行到其他行

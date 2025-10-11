@@ -111,7 +111,7 @@ export function useHouseList() {
         requestCount = 0;
       } else {
         console.error('房屋列表请求失败，状态:', response.status);
-        Message.error(response.message || '获取房屋列表失败');
+        Message.error(String(response.message) || '获取房屋列表失败');
       }
     } catch (error) {
       console.error('获取房屋列表失败:', error);
@@ -191,7 +191,7 @@ export function useHouseList() {
         fetchHouseList(); // 刷新列表
         return true;
       } else {
-        Message.error(response.message || '房屋信息更新失败');
+        Message.error(String(response.message) || '房屋信息更新失败');
         return false;
       }
     } catch (error: any) {
@@ -230,7 +230,7 @@ export function useHouseList() {
         fetchHouseList(); // 刷新列表
         return response.data; // 返回新房屋ID
       } else {
-        Message.error(response.message || '房屋添加失败');
+        Message.error(String(response.message) || '房屋添加失败');
         return null;
       }
     } catch (error: any) {

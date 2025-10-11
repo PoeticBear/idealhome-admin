@@ -428,9 +428,12 @@ const statisticsData = computed(() => {
   const totalReceivable = paymentPeriods.value.reduce((sum, period) => sum + period.totalAmount, 0)
   const totalReceived = paymentPeriods.value
     .filter(p => p.status === '已缴')
-    .reduce((sum, period) => sum + (period.actualPayments ?
-      period.actualPayments.rent + period.actualPayments.water + period.actualPayments.electricity :
-      period.totalAmount), 0)
+    .reduce((sum, period) => {
+      const payments = (period as any).actualPayments;
+      return sum + (payments ?
+        (payments.rent || 0) + (payments.water || 0) + (payments.electricity || 0) :
+        period.totalAmount);
+    }, 0)
   const totalPending = totalReceivable - totalReceived
 
   const collectionRate = totalReceivable > 0 ? (totalReceived / totalReceivable * 100) : 0

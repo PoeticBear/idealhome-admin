@@ -119,8 +119,8 @@
       @update:visible="showEditModal = $event"
       @confirm="saveEdit"
       @cancel="cancelEdit"
-      @province-change="(value) => handleProvinceChange(value, true)"
-      @city-change="(value) => handleCityChange(value, true)"
+      @province-change="(value: string | number) => handleProvinceChange(value, true)"
+      @city-change="(value: string | number) => handleCityChange(value, true)"
     />
 
     <!-- 租客入住登记弹窗 -->
