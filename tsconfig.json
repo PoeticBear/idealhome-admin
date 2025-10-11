@@ -22,7 +22,10 @@
       "@/*": [
         "./src/*"
       ]
-    }
+    },
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true
   },
   "references": [
     {

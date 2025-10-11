@@ -495,7 +495,11 @@ const initializeHouseData = (houseId: string) => {
 }
 
 // 批量操作工具栏数据
-const batchTools = ref({
+const batchTools = ref<{
+  targetUtilityType: string
+  targetField: string
+  targetValue: any
+}>({
   targetUtilityType: 'water', // 目标费用项目
   targetField: 'unitPrice', // 目标字段
   targetValue: null
@@ -523,28 +527,28 @@ const createBodyColumns = () => {
         dataIndex: `${type.key}UnitPrice`,
         width: 95,
         slotName: `${type.key}UnitPrice`,
-        align: 'center'
+        fixed: 'left'
       },
       {
         title: '起数',
         dataIndex: `${type.key}StartReading`,
         width: 95,
         slotName: `${type.key}StartReading`,
-        align: 'center'
+        fixed: 'left'
       },
       {
         title: '止数',
         dataIndex: `${type.key}EndReading`,
         width: 95,
         slotName: `${type.key}EndReading`,
-        align: 'center'
+        fixed: 'left'
       },
       {
         title: '总价',
         dataIndex: `${type.key}TotalPrice`,
         width: 105,
         slotName: `${type.key}TotalPrice`,
-        align: 'center'
+        fixed: 'left'
       }
     )
   })
