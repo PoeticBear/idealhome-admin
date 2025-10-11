@@ -2,15 +2,31 @@
   <a-card class="house-card" :hoverable="true" :class="`status-${house.status}`">
     <template #cover>
       <div class="card-cover">
-        <!-- 状态徽章 -->
-        <div class="status-badge">
-          <component :is="getStatusIcon(house.status)" size="16" />
-        </div>
+      
 
         <!-- 状态文字标识 -->
         <div class="status-text-center">
-          <component :is="getStatusIcon(house.status)" size="32" />
           <span>{{ getStatusInfo(house.status).label }}</span>
+
+          <!-- 查看租客按钮（仅已租状态显示） -->
+          <div
+            v-if="house.status === 2"
+            class="view-tenant-btn"
+            @click="$emit('viewTenant', house)"
+          >
+            <icon-user />
+            <span>查看租客</span>
+          </div>
+
+          <!-- 租客入住按钮（仅待租状态显示） -->
+          <div
+            v-if="house.status === 1"
+            class="checkin-btn"
+            @click="$emit('checkin', house)"
+          >
+            <icon-user-add />
+            <span>租客入住</span>
+          </div>
         </div>
 
         <!-- 悬浮操作按钮 -->
@@ -33,7 +49,7 @@
           >
             <icon-eye />
           </a-button>
-        </div>
+          </div>
       </div>
     </template>
 
@@ -74,60 +90,30 @@
 
         <!-- 操作按钮区域 -->
         <div class="action-section">
-          <!-- 租客入住登记按钮（仅待租状态显示） -->
-          <div v-if="house.status === 1" class="action-group">
-            <a-button
-              type="primary"
-              size="mini"
-              class="action-btn-small checkin-btn"
-              @click="$emit('checkin', house)"
-            >
-              <template #icon>
-                <icon-user-add />
-              </template>
-              租客入住
-            </a-button>
-          </div>
-
-          <!-- 查看租客按钮（仅已租状态显示） -->
-          <div v-if="house.status === 2" class="action-group">
-            <a-button
-              type="outline"
-              size="mini"
-              class="action-btn-small"
-              @click="$emit('viewTenant', house)"
-            >
-              <template #icon>
-                <icon-user />
-              </template>
-              查看租客
-            </a-button>
-            <a-button
-              type="outline"
-              size="mini"
-              class="action-btn-small"
-              @click="$emit('payment', house)"
-            >
-              <template #icon>
-                <icon-money-circle />
-              </template>
-              收款
-            </a-button>
-          </div>
-
+          
+  
           <!-- 水电录入按钮（所有状态显示） -->
-          <div class="action-group">
-            <a-button
-              type="outline"
-              size="mini"
-              class="action-btn-small"
-              @click="$emit('utility', house)"
-            >
-              <template #icon>
-                <icon-thunderbolt />
-              </template>
-              水电录入
-            </a-button>
+          <div
+            class="action-btn-small"
+            :class="{ 'disabled': house.status !== 2 }"
+            @click="house.status === 2 ? $emit('utility', house) : null"
+          >
+            <div class="btn-icon">
+              <icon-thunderbolt />
+            </div>
+            <div class="btn-text">水电录入</div>
+          </div>
+
+          <!-- 收款按钮（固定显示） -->
+          <div
+            class="action-btn-small"
+            :class="{ 'disabled': house.status !== 2 }"
+            @click="house.status === 2 ? $emit('payment', house) : null"
+          >
+            <div class="btn-icon">
+              <icon-money-circle />
+            </div>
+            <div class="btn-text">收款</div>
           </div>
         </div>
       </div>
@@ -240,13 +226,86 @@ const getStatusIcon = (status: number) => {
         font-size: 18px;
         font-weight: 700;
         color: rgba(255, 255, 255, 0.95);
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
       }
 
       // 状态图标样式
       :deep(.arco-icon) {
         color: rgba(255, 255, 255, 0.95);
         filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+      }
+
+      // 查看租客按钮样式
+      .view-tenant-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        color: var(--status-rented-primary);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 4px;
+        backdrop-filter: blur(8px);
+
+        :deep(.arco-icon) {
+          font-size: 14px;
+          color: var(--status-rented-primary);
+        }
+
+        span {
+          color: #10b981;
+        }
+
+        &:hover {
+          background: white;
+          border-color: white;
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
+      // 租客入住按钮样式
+      .checkin-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        color: var(--status-available-primary);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 4px;
+        backdrop-filter: blur(8px);
+
+        :deep(.arco-icon) {
+          font-size: 14px;
+          color: var(--status-available-primary);
+        }
+
+        span {
+          color: #3b82f6;
+        }
+
+        &:hover {
+          background: white;
+          border-color: white;
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
       }
     }
 
@@ -351,6 +410,17 @@ const getStatusIcon = (status: number) => {
           }
         }
 
+        &.tenant-btn {
+          background: rgba(16, 185, 129, 0.9);
+          border-color: rgba(16, 185, 129, 0.3);
+          color: white;
+
+          &:hover {
+            background: rgba(16, 185, 129, 1);
+            border-color: rgba(16, 185, 129, 0.5);
+          }
+        }
+
         :deep(.arco-btn-icon) {
           font-size: 14px;
         }
@@ -443,7 +513,7 @@ const getStatusIcon = (status: number) => {
     // 地区信息行
     .location-row {
       display: flex;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       padding-bottom: 8px;
       border-bottom: 1px solid var(--color-border-2);
@@ -453,7 +523,7 @@ const getStatusIcon = (status: number) => {
         align-items: center;
         gap: 3px;
         width: 100%;
-        justify-content: center;
+        justify-content: flex-start;
 
         .info-icon {
           font-size: 14px;
@@ -467,7 +537,7 @@ const getStatusIcon = (status: number) => {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          text-align: center;
+          text-align: left;
         }
       }
     }
@@ -475,33 +545,115 @@ const getStatusIcon = (status: number) => {
     // 操作区域
     .action-section {
       display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      height: 56px;
+      gap: 4px;
+      align-items: center;
+      height: 80px; // 增加容器高度以适应方块按钮
+      width: 100%;
 
-      .action-group {
+      .action-btn-small {
+        flex: 1; // 让按钮平均分配宽度
         display: flex;
-        gap: 6px;
+        flex-direction: column;
         align-items: center;
-        width: 100%;
         justify-content: center;
+        height: 48px; // 显著增加按钮高度，形成方块
+        padding: 6px 4px; // 增加上下内边距
+        border-radius: 4px;
+        min-width: 0; // 允许按钮收缩
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid var(--color-border-2);
 
-        .action-btn-small {
-          font-size: 13px;
-          height: 28px;
-          padding: 0 10px;
-          border-radius: 4px;
+        // 统一的灰色主题
+        background: var(--color-fill-2);
+        color: var(--color-text-2);
 
-          &.checkin-btn {
-            background: var(--color-primary-6);
-            border-color: var(--color-primary-6);
-            color: white;
+        &:hover {
+          background: var(--color-fill-3);
+          border-color: var(--color-border-3);
+          color: var(--color-text-1);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
 
-            &:hover {
-              background: var(--color-primary-5);
-              border-color: var(--color-primary-5);
-            }
+        // 已租状态下的明亮样式
+        .house-card.status-2 & {
+          background: rgba(16, 185, 129, 0.1);
+          border-color: rgba(16, 185, 129, 0.3);
+
+          .btn-icon {
+            color: var(--status-rented-primary);
           }
+
+          .btn-text {
+            color: var(--status-rented-primary);
+            font-weight: 600;
+          }
+
+          &:hover {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+          }
+        }
+
+        &:active {
+          background: var(--color-fill-4);
+          border-color: var(--color-border-4);
+          transform: translateY(0);
+        }
+
+        // 图标样式
+        .btn-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 2px;
+          font-size: 16px;
+          color: var(--color-text-2);
+        }
+
+        // 文字样式
+        .btn-text {
+          font-size: 13px;
+          font-weight: 500;
+          text-align: center;
+          line-height: 1.2;
+          color: var(--color-text-2);
+        }
+
+        // 禁用状态样式
+        &.disabled {
+          background: var(--color-fill-1);
+          border-color: var(--color-border-1);
+          cursor: not-allowed;
+          opacity: 0.6;
+
+          .btn-icon {
+            color: var(--color-text-4);
+          }
+
+          .btn-text {
+            color: var(--color-text-4);
+          }
+
+          &:hover {
+            background: var(--color-fill-1);
+            border-color: var(--color-border-1);
+            color: var(--color-text-4);
+            transform: none;
+            box-shadow: none;
+          }
+
+          &:active {
+            transform: none;
+          }
+        }
+
+        // 单个按钮时的特殊处理
+        &:only-child {
+          flex: 1;
         }
       }
     }
@@ -540,6 +692,26 @@ const getStatusIcon = (status: number) => {
 
         :deep(.arco-icon) {
           font-size: 28px;
+        }
+
+        .view-tenant-btn {
+          padding: 3px 8px;
+          font-size: 11px;
+          margin-top: 3px;
+
+          :deep(.arco-icon) {
+            font-size: 12px;
+          }
+        }
+
+        .checkin-btn {
+          padding: 3px 8px;
+          font-size: 11px;
+          margin-top: 3px;
+
+          :deep(.arco-icon) {
+            font-size: 12px;
+          }
         }
       }
     }
@@ -594,13 +766,21 @@ const getStatusIcon = (status: number) => {
       }
 
       .action-section {
-        height: 50px;
+        height: 70px; // 平板端容器高度
+        gap: 3px;
 
-        .action-group {
-          .action-btn-small {
+        .action-btn-small {
+          height: 42px; // 平板端按钮高度
+          padding: 5px 3px;
+
+          .btn-icon {
+            font-size: 15px;
+            margin-bottom: 1px;
+          }
+
+          .btn-text {
             font-size: 12px;
-            height: 26px;
-            padding: 0 8px;
+            line-height: 1.1;
           }
         }
       }
@@ -643,6 +823,26 @@ const getStatusIcon = (status: number) => {
 
         :deep(.arco-icon) {
           font-size: 24px;
+        }
+
+        .view-tenant-btn {
+          padding: 2px 6px;
+          font-size: 10px;
+          margin-top: 2px;
+
+          :deep(.arco-icon) {
+            font-size: 11px;
+          }
+        }
+
+        .checkin-btn {
+          padding: 2px 6px;
+          font-size: 10px;
+          margin-top: 2px;
+
+          :deep(.arco-icon) {
+            font-size: 11px;
+          }
         }
       }
     }
@@ -695,13 +895,21 @@ const getStatusIcon = (status: number) => {
       }
 
       .action-section {
-        height: 46px;
+        height: 64px; // 手机端容器高度
+        gap: 2px;
 
-        .action-group {
-          .action-btn-small {
+        .action-btn-small {
+          height: 36px; // 手机端按钮高度
+          padding: 4px 2px;
+
+          .btn-icon {
+            font-size: 14px;
+            margin-bottom: 1px;
+          }
+
+          .btn-text {
             font-size: 11px;
-            height: 24px;
-            padding: 0 6px;
+            line-height: 1.1;
           }
         }
       }

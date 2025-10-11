@@ -184,6 +184,18 @@ import { useHouseList } from './composables/useHouseList';
 import { useHouseForm } from './composables/useHouseForm';
 import { useTenantManagement } from './composables/useTenantManagement';
 
+// 导入格式化工具函数
+import {
+  processImageData,
+  processVideoData,
+  formatFullAddress,
+  formatAmount,
+  getFacilityLabel,
+  getTowardLabel,
+  getBalconyLabel,
+  getPaymentDayLabel
+} from './utils/formatters';
+
 // 导入组件
 import ViewModeToggle from './components/ViewModeToggle.vue';
 import HouseTable from './components/HouseTable.vue';
@@ -278,8 +290,48 @@ const showInfo = (data: any) => {
     { label: '户型：', value: data.layoutType },
   ];
 
-  // 处理其他信息...
-  // 这里可以继续添加更多的数据处理逻辑
+  // 处理设施配置信息
+  showData.facilityInfo = [
+    { label: '朝向：', value: data.toward },
+    { label: '厨房：', value: data.kitchen },
+    { label: '卫生间：', value: data.toilet },
+    { label: '阳台：', value: data.balcony },
+    { label: '装修程度：', value: data.decorationDegree },
+  ];
+
+  // 处理费用信息
+  showData.costInfo = [
+    { label: '实际租金：', value: formatAmount(data.actualRent) },
+    { label: '对外租金：', value: formatAmount(data.price) },
+    { label: '押金月数：', value: data.depositMonths },
+    { label: '每次付月数：', value: data.paymentMonths },
+    { label: '物业费：', value: formatAmount(data.propertyFee) },
+    { label: '月结日：', value: data.paymentDay ? getPaymentDayLabel(data.paymentDay) : null },
+  ];
+
+  // 处理位置信息
+  showData.locationInfo = [
+    { label: '详细地址：', value: formatFullAddress(data.provinceName, data.cityName, data.areaName, data.detailAddress) },
+    { label: '楼栋：', value: data.building },
+    { label: '单元：', value: data.unit },
+    { label: '楼层：', value: data.floor },
+    { label: '房号：', value: data.roomNumber },
+  ];
+
+  // 处理其他信息
+  showData.otherInfo = [
+    { label: '备注：', value: data.remark },
+    { label: '创建时间：', value: data.createTime },
+    { label: '更新时间：', value: data.updateTime },
+    { label: '状态：', value: data.status },
+  ];
+
+  // 处理媒体资源数据
+  showData.headImg = processImageData(data.headImg);
+  showData.videoUrl = processVideoData(data.videoUrl);
+
+  // 租客信息保持原样（如果存在）
+  showData.tenantsUsers = data.tenantsUsers || [];
 
   showInfoModel.value = true;
 };
