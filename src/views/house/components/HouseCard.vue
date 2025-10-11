@@ -113,7 +113,7 @@
             <div class="btn-icon">
               <icon-money-circle />
             </div>
-            <div class="btn-text">收款</div>
+            <div class="btn-text">收款管理</div>
           </div>
         </div>
       </div>

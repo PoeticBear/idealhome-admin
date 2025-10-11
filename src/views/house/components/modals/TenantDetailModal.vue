@@ -1,18 +1,13 @@
 <template>
   <a-modal
     :visible="visible"
-    title=""
+    title="租客详情"
     title-align="start"
     width="900px"
     :mask-closable="false"
     class="tenant-detail-modal"
     @update:visible="$emit('update:visible', $event)"
   >
-    <template #footer>
-      <a-space>
-        <a-button @click="$emit('close')">关闭</a-button>
-      </a-space>
-    </template>
 
     <div class="tenant-detail-container">
       <!-- 主要内容区域 -->
@@ -53,71 +48,31 @@
             <h3>租赁信息</h3>
           </div>
 
-          <!-- 合同期限卡片 -->
-          <div class="contract-period-card">
-            <div class="period-header">
-              <icon-calendar theme="filled" size="18" />
-              <span class="period-title">合同期限</span>
+          <!-- 租赁信息列表 -->
+          <div class="lease-info">
+            <div class="info-row">
+              <span class="label">开始日期</span>
+              <span class="value">{{ tenantDetailData.leaseStartDate || '-' }}</span>
             </div>
-            <div class="period-content">
-              <div class="period-item">
-                <span class="period-label">开始日期</span>
-                <span class="period-value">{{ tenantDetailData.leaseStartDate || '-' }}</span>
-              </div>
-              <div class="period-arrow">
-                <icon-arrow-right />
-              </div>
-              <div class="period-item">
-                <span class="period-label">结束日期</span>
-                <span class="period-value">{{ tenantDetailData.leaseEndDate || '-' }}</span>
-              </div>
+            <div class="info-row">
+              <span class="label">结束日期</span>
+              <span class="value">{{ tenantDetailData.leaseEndDate || '-' }}</span>
             </div>
-          </div>
-
-          <!-- 费用信息网格 -->
-          <div class="fees-grid">
-            <div class="fee-card primary">
-              <div class="fee-icon">
-                <icon-dollar-circle theme="filled" />
-              </div>
-              <div class="fee-content">
-                <div class="fee-label">月租金</div>
-                <div class="fee-value">¥{{ formatAmount(tenantDetailData.rentPrice) }}</div>
-                <div class="fee-unit">每月</div>
-              </div>
+            <div class="info-row">
+              <span class="label">月租金</span>
+              <span class="value">¥{{ formatAmount(tenantDetailData.rentPrice) }}</span>
             </div>
-
-            <div class="fee-card">
-              <div class="fee-icon">
-                <icon-safe theme="filled" />
-              </div>
-              <div class="fee-content">
-                <div class="fee-label">房屋押金</div>
-                <div class="fee-value">¥{{ formatAmount(tenantDetailData.houseDeposit) }}</div>
-                <div class="fee-unit">一次性</div>
-              </div>
+            <div class="info-row">
+              <span class="label">房屋押金</span>
+              <span class="value">¥{{ formatAmount(tenantDetailData.houseDeposit) }}</span>
             </div>
-
-            <div class="fee-card">
-              <div class="fee-icon">
-                <icon-home theme="filled" />
-              </div>
-              <div class="fee-content">
-                <div class="fee-label">物业费</div>
-                <div class="fee-value">¥{{ formatAmount(tenantDetailData.propertyFee) }}</div>
-                <div class="fee-unit">每月</div>
-              </div>
+            <div class="info-row">
+              <span class="label">物业费</span>
+              <span class="value">¥{{ formatAmount(tenantDetailData.propertyFee) }}</span>
             </div>
-
-            <div class="fee-card">
-              <div class="fee-icon">
-                <icon-wifi theme="filled" />
-              </div>
-              <div class="fee-content">
-                <div class="fee-label">网络费</div>
-                <div class="fee-value">¥{{ formatAmount(tenantDetailData.internetFee) }}</div>
-                <div class="fee-unit">每月</div>
-              </div>
+            <div class="info-row">
+              <span class="label">网络费</span>
+              <span class="value">¥{{ formatAmount(tenantDetailData.internetFee) }}</span>
             </div>
           </div>
 
@@ -176,6 +131,7 @@
           <span class="summary-value">{{ calculateContractRemainingDays() }}天</span>
         </div>
       </div>
+
     </div>
   </a-modal>
 </template>
@@ -224,13 +180,26 @@ const calculateContractRemainingDays = () => {
     }
 
     .arco-modal-header {
-      display: none;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-border-2);
+
+      .arco-modal-header-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--color-text-1);
+      }
+
+      .arco-modal-close-btn {
+        color: var(--color-text-3);
+
+        &:hover {
+          color: var(--color-text-1);
+        }
+      }
     }
 
     .arco-modal-footer {
-      padding: 16px 24px;
-      border-top: 1px solid var(--color-border-2);
-      background: var(--color-bg-2);
+      display: none;
     }
   }
 }
@@ -238,23 +207,24 @@ const calculateContractRemainingDays = () => {
 .tenant-detail-container {
   .main-content {
     display: flex;
-    gap: 24px;
-    padding: 24px;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
 
     .tenant-section {
-      flex: 0 0 300px;
+      flex: none;
 
       .section-header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 20px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid var(--color-primary-6);
+        gap: 6px;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--color-primary-6);
 
         h3 {
           margin: 0;
-          font-size: 18px;
+          font-size: 16px;
           font-weight: 600;
           color: var(--color-text-1);
         }
@@ -266,7 +236,7 @@ const calculateContractRemainingDays = () => {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 6px 0;
             border-bottom: 1px solid var(--color-border-2);
 
             &:last-child {
@@ -308,143 +278,63 @@ const calculateContractRemainingDays = () => {
       .section-header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 20px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid var(--color-primary-6);
+        gap: 6px;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--color-primary-6);
 
         h3 {
           margin: 0;
-          font-size: 18px;
+          font-size: 16px;
           font-weight: 600;
           color: var(--color-text-1);
         }
       }
 
-      .contract-period-card {
-        background: linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2));
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 12px rgba(var(--color-primary-6), 0.1);
-
-        .period-header {
+      .lease-info {
+        .info-row {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 8px;
-          margin-bottom: 16px;
+          padding: 6px 0;
+          border-bottom: 1px solid var(--color-border-2);
 
-          .period-title {
-            font-size: 16px;
-            font-weight: 600;
+          &:last-child {
+            border-bottom: none;
+          }
+
+          .label {
+            font-size: 14px;
+            color: var(--color-text-2);
+            font-weight: 500;
+          }
+
+          .value {
+            font-size: 14px;
             color: var(--color-text-1);
-          }
-        }
-
-        .period-content {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-
-          .period-item {
-            flex: 1;
-            text-align: center;
-
-            .period-label {
-              display: block;
-              font-size: 12px;
-              color: var(--color-text-3);
-              margin-bottom: 4px;
-            }
-
-            .period-value {
-              display: block;
-              font-size: 14px;
-              font-weight: 600;
-              color: var(--color-text-1);
-            }
-          }
-
-          .period-arrow {
-            color: var(--color-primary-6);
-            font-size: 16px;
-          }
-        }
-      }
-
-      .fees-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-        margin-bottom: 20px;
-
-        .fee-card {
-          background: var(--color-bg-2);
-          border-radius: 12px;
-          padding: 16px;
-          border: 1px solid var(--color-border-2);
-          transition: all 0.3s ease;
-
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-          }
-
-          &.primary {
-            background: linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2));
-            border-color: var(--color-primary-3);
-
-            .fee-value {
-              color: var(--color-primary-6);
-              font-size: 18px;
-            }
-          }
-
-          .fee-icon {
-            margin-bottom: 8px;
-            color: var(--color-primary-6);
-            font-size: 20px;
-          }
-
-          .fee-content {
-            .fee-label {
-              font-size: 12px;
-              color: var(--color-text-3);
-              margin-bottom: 4px;
-            }
-
-            .fee-value {
-              font-size: 16px;
-              font-weight: 700;
-              color: var(--color-text-1);
-              margin-bottom: 2px;
-            }
-
-            .fee-unit {
-              font-size: 11px;
-              color: var(--color-text-3);
-            }
+            font-weight: 500;
+            text-align: right;
           }
         }
       }
 
       .additional-info {
         display: flex;
-        gap: 16px;
+        flex-direction: column;
+        gap: 8px;
 
         .info-card, .remark-card {
-          flex: 1;
           background: var(--color-bg-2);
-          border-radius: 12px;
-          padding: 16px;
+          border-radius: 6px;
+          padding: 10px;
           border: 1px solid var(--color-border-2);
 
           .info-header, .remark-header {
             display: flex;
             align-items: center;
             gap: 6px;
-            margin-bottom: 12px;
-            font-size: 14px;
+            margin-bottom: 8px;
+            font-size: 13px;
             font-weight: 600;
             color: var(--color-text-1);
           }
@@ -454,7 +344,7 @@ const calculateContractRemainingDays = () => {
               display: flex;
               justify-content: space-between;
               align-items: center;
-              padding: 6px 0;
+              padding: 4px 0;
 
               .detail-label {
                 font-size: 12px;
@@ -470,9 +360,9 @@ const calculateContractRemainingDays = () => {
           }
 
           .remark-content {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--color-text-2);
-            line-height: 1.5;
+            line-height: 1.4;
           }
         }
       }
@@ -482,7 +372,7 @@ const calculateContractRemainingDays = () => {
   .summary-section {
     display: flex;
     justify-content: space-around;
-    padding: 20px 24px;
+    padding: 8px 16px;
     background: var(--color-bg-2);
     border-top: 1px solid var(--color-border-2);
 
@@ -493,20 +383,31 @@ const calculateContractRemainingDays = () => {
         display: block;
         font-size: 12px;
         color: var(--color-text-3);
-        margin-bottom: 4px;
+        margin-bottom: 3px;
       }
 
       .summary-value {
         display: block;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         color: var(--color-text-1);
 
         &.primary {
           color: var(--color-primary-6);
-          font-size: 18px;
+          font-size: 16px;
         }
       }
+    }
+  }
+
+  .close-section {
+    padding: 16px;
+    text-align: center;
+    border-top: 1px solid var(--color-border-2);
+    background: var(--color-bg-2);
+
+    .arco-btn {
+      min-width: 120px;
     }
   }
 }
@@ -515,38 +416,97 @@ const calculateContractRemainingDays = () => {
 @media (max-width: 768px) {
   .tenant-detail-container {
     .main-content {
-      flex-direction: column;
-      gap: 20px;
-      padding: 16px;
+      gap: 8px;
+      padding: 10px;
 
       .tenant-section {
-        flex: none;
-
         .section-header {
-          margin-bottom: 16px;
+          margin-bottom: 8px;
+        }
+
+        .tenant-info .info-row {
+          padding: 5px 0;
+
+          &.primary .value.name {
+            font-size: 15px;
+          }
+
+          .label, .value {
+            font-size: 13px;
+          }
         }
       }
 
       .lease-section {
-        .fees-grid {
-          grid-template-columns: 1fr;
+        .lease-info .info-row {
+          padding: 5px 0;
+
+          .label, .value {
+            font-size: 13px;
+          }
         }
 
         .additional-info {
-          flex-direction: column;
-          gap: 12px;
+          gap: 6px;
+
+          .info-card, .remark-card {
+            padding: 8px;
+
+            .info-header, .remark-header {
+              margin-bottom: 6px;
+              font-size: 12px;
+            }
+
+            .info-details .detail-row {
+              padding: 3px 0;
+
+              .detail-label {
+                font-size: 11px;
+              }
+
+              .detail-value {
+                font-size: 12px;
+              }
+            }
+
+            .remark-content {
+              font-size: 11px;
+            }
+          }
         }
       }
     }
 
     .summary-section {
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
+      padding: 8px 12px;
 
       .summary-item {
         display: flex;
         justify-content: space-between;
         text-align: left;
+
+        .summary-label {
+          font-size: 11px;
+        }
+
+        .summary-value {
+          font-size: 13px;
+
+          &.primary {
+            font-size: 14px;
+          }
+        }
+      }
+    }
+
+    .close-section {
+      padding: 12px;
+
+      .arco-btn {
+        min-width: 100px;
+        font-size: 13px;
       }
     }
   }
