@@ -28,7 +28,7 @@
             </a-space>
           </a-doption> -->
           <a-doption>
-            <a-space @click="uStore.logOut">
+            <a-space @click="handleLogout">
               <icon-export />
               <span>
                 退出登录
@@ -45,6 +45,7 @@
 import {
   ref
 } from 'vue'
+import { Modal } from '@arco-design/web-vue'
 import appStore from '@/stores/index'
 import userStore from '@/stores/user'
 
@@ -72,6 +73,18 @@ const userInfo = () => {
 const emits = defineEmits(['switchMenuDrawer']);
 const handerSwitchMenuDrawer = () => {
   emits('switchMenuDrawer')
+}
+
+const handleLogout = () => {
+  Modal.confirm({
+    title: '确认退出',
+    content: '确定要退出登录吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => {
+      uStore.logOut()
+    }
+  })
 }
 
 const title = ref(import.meta.env.VITE_TITLE)

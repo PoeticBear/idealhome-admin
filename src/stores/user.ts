@@ -37,10 +37,24 @@ export default defineStore('user', {
     },
     logOut () {
       const rStore = routerStore()
+      // 清除本地存储
       window.localStorage.removeItem('cacheRoutes')
       window.localStorage.removeItem('token')
+      // 清除用户信息
+      this.userInfo = {
+        id: '',
+        name: '',
+        remark: '',
+        phone: '',
+        status: 1,
+        head_img: '',
+        created_at: '',
+        updated_at: ''
+      }
+      // 清除路由历史
       rStore.removeHistoryRouter()
-      router.replace('/login')
+      // 跳转到登录页
+      router.push('/login')
     },
     getUserInfo () {
       return getUserInfo().then(({

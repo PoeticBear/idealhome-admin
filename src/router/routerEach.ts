@@ -10,14 +10,19 @@ const whitePath = [
 NProgress.configure({ showSpinner: false });
 export default (router: Router) => {
   router.beforeEach(async (to, from, next) => {
+    NProgress.start();
+
+    // 如果访问登录页，直接放行
+    if (to.path === '/login') {
+      next()
+      NProgress.done();
+      return
+    }
+
     const token = localStorage.getItem('token')
     const userStore = useUserStore()
 
-    NProgress.start();
-    if (whitePath.includes(to.path)) {
-      next()
-      NProgress.done();
-    } else if (token) {
+    if (token) {
       if (userStore.userInfo.id) {
         next()
         NProgress.done();
