@@ -3,7 +3,7 @@
     :visible="visible"
     :title="`收款管理 - ${houseData?.name || ''}`"
     title-align="start"
-    width="800px"
+    width="1200px"
     :mask-closable="false"
     @update:visible="handleVisibleChange"
     @cancel="handleCancel"
@@ -16,191 +16,168 @@
     </template>
 
     <div class="payment-modal-container">
-     
-
-      <!-- 收款管理内容区域 -->
-      <div class="payment-content">
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-card size="small" title="本月应收" :bordered="false">
-              <div class="payment-item">
-                <span class="label">租金：</span>
-                <span class="amount">¥2,500.00</span>
-              </div>
-              <div class="payment-item">
-                <span class="label">水费：</span>
-                <span class="amount water">¥125.30</span>
-              </div>
-              <!-- 水费明细 -->
-              <div class="payment-detail water-detail">
-                <div class="detail-item">
-                  <span class="detail-label">单价：</span>
-                  <span class="detail-value">¥4.50/吨</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">起数：</span>
-                  <span class="detail-value">125.8</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">止数：</span>
-                  <span class="detail-value">153.7</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">用量：</span>
-                  <span class="detail-value">27.9吨</span>
-                </div>
-              </div>
-              <div class="payment-item">
-                <span class="label">电费：</span>
-                <span class="amount electricity">¥195.20</span>
-              </div>
-              <!-- 电费明细 -->
-              <div class="payment-detail electricity-detail">
-                <div class="detail-item">
-                  <span class="detail-label">单价：</span>
-                  <span class="detail-value">¥0.68/度</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">起数：</span>
-                  <span class="detail-value">1,248</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">止数：</span>
-                  <span class="detail-value">1,535</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">用量：</span>
-                  <span class="detail-value">287度</span>
-                </div>
-              </div>
-              <div class="payment-item total">
-                <span class="label">合计：</span>
-                <span class="amount total-amount">¥2,820.50</span>
-              </div>
-            </a-card>
-          </a-col>
-          <a-col :span="12">
-            <a-card size="small" title="收款状态" :bordered="false">
-              <div class="payment-status">
-                <a-tag color="orange" size="medium">待收款</a-tag>
-                <p class="status-desc">租客本月费用尚未缴纳</p>
-              </div>
-              <div class="payment-actions">
-                <a-button type="primary" size="small" style="margin-right: 8px;">
-                  标记已收款
-                </a-button>
-                <a-button size="small">
-                  发送提醒
-                </a-button>
-              </div>
-
-              <!-- 实际收费金额输入区域 -->
-              <div class="actual-payment-input">
-                <a-divider style="margin: 16px 0 12px 0;">实际收费金额</a-divider>
-
-                <div class="input-item">
-                  <div class="input-label">租金：</div>
-                  <div class="input-content">
-                    <a-input-number
-                      v-model="actualPayments.rent"
-                      :precision="2"
-                      :min="0"
-                      placeholder="请输入实际租金"
-                      size="small"
-                      style="width: 120px;"
-                    />
-                    <span class="expected-amount">应收：¥{{ expectedPayments.rent.toFixed(2) }}</span>
-                    <span
-                      :class="['difference', paymentDifferences.rent > 0 ? 'positive' : paymentDifferences.rent < 0 ? 'negative' : '']"
-                    >
-                      {{ paymentDifferences.rent > 0 ? '+' : '' }}¥{{ Math.abs(paymentDifferences.rent).toFixed(2) }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="input-item">
-                  <div class="input-label">水费：</div>
-                  <div class="input-content">
-                    <a-input-number
-                      v-model="actualPayments.water"
-                      :precision="2"
-                      :min="0"
-                      placeholder="请输入实际水费"
-                      size="small"
-                      style="width: 120px;"
-                    />
-                    <span class="expected-amount">应收：¥{{ expectedPayments.water.toFixed(2) }}</span>
-                    <span
-                      :class="['difference', paymentDifferences.water > 0 ? 'positive' : paymentDifferences.water < 0 ? 'negative' : '']"
-                    >
-                      {{ paymentDifferences.water > 0 ? '+' : '' }}¥{{ Math.abs(paymentDifferences.water).toFixed(2) }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="input-item">
-                  <div class="input-label">电费：</div>
-                  <div class="input-content">
-                    <a-input-number
-                      v-model="actualPayments.electricity"
-                      :precision="2"
-                      :min="0"
-                      placeholder="请输入实际电费"
-                      size="small"
-                      style="width: 120px;"
-                    />
-                    <span class="expected-amount">应收：¥{{ expectedPayments.electricity.toFixed(2) }}</span>
-                    <span
-                      :class="['difference', paymentDifferences.electricity > 0 ? 'positive' : paymentDifferences.electricity < 0 ? 'negative' : '']"
-                    >
-                      {{ paymentDifferences.electricity > 0 ? '+' : '' }}¥{{ Math.abs(paymentDifferences.electricity).toFixed(2) }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="input-total">
-                  <div class="total-label">合计：</div>
-                  <div class="total-content">
-                    <span class="actual-total">实收：¥{{ totalActual.toFixed(2) }}</span>
-                    <span class="expected-total">应收：¥{{ totalExpected.toFixed(2) }}</span>
-                    <span
-                      :class="['total-difference', totalDifference > 0 ? 'positive' : totalDifference < 0 ? 'negative' : '']"
-                    >
-                      {{ totalDifference > 0 ? '+' : '' }}¥{{ Math.abs(totalDifference).toFixed(2) }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="notes-item">
-                  <div class="notes-label">备注：</div>
-                  <a-textarea
-                    v-model="actualPayments.notes"
-                    placeholder="请输入收费备注信息"
-                    :auto-size="{ minRows: 2, maxRows: 4 }"
-                    size="small"
-                  />
-                </div>
-              </div>
-            </a-card>
-          </a-col>
-        </a-row>
-
-        <!-- 收款记录 -->
-        <div class="payment-history">
-          <a-card size="small" title="最近收款记录" :bordered="false">
-            <a-table
-              :columns="historyColumns"
-              :data="historyData"
-              :pagination="false"
-              size="small"
+      <div class="payment-layout">
+        <!-- 左侧费用周期列表 -->
+        <div class="period-sidebar">
+          <div class="sidebar-header">
+            <span class="header-title">费用周期</span>
+          </div>
+          <div class="period-list">
+            <div
+              v-for="period in paymentPeriods"
+              :key="period.id"
+              :class="['period-item', { 'active': selectedPeriod?.id === period.id }]"
+              @click="selectPeriod(period)"
             >
-              <template #status="{ record }">
-                <a-tag :color="record.status === '已缴' ? 'green' : 'orange'">
-                  {{ record.status }}
+              <div class="period-month">{{ period.month }}</div>
+              <div class="period-status">
+                <a-tag
+                  :color="period.status === '已缴' ? 'green' : period.status === '待缴' ? 'orange' : 'gray'"
+                  size="small"
+                >
+                  {{ period.status }}
                 </a-tag>
-              </template>
-            </a-table>
-          </a-card>
+              </div>
+              <div class="period-amount">¥{{ period.totalAmount.toFixed(2) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧收款管理内容区域 -->
+        <div class="payment-content">
+          <div class="content-header">
+            <div class="header-left">
+              <span class="current-period">{{ selectedPeriod?.month || '选择周期' }}</span>
+              <span class="period-status-text">{{ selectedPeriod?.status || '未选择' }}</span>
+            </div>
+            <div class="header-right" v-if="selectedPeriod && selectedPeriod.status === '已缴'">
+              <a-button
+                v-if="!isEditMode"
+                type="outline"
+                size="small"
+                @click="toggleEditMode"
+              >
+                <template #icon>
+                  <icon-edit />
+                </template>
+                编辑
+              </a-button>
+              <a-space v-else size="small">
+                <a-button type="outline" size="small" @click="cancelEdit">取消</a-button>
+                <a-button type="primary" size="small" @click="toggleEditMode">完成</a-button>
+              </a-space>
+            </div>
+          </div>
+
+          <!-- 租金 -->
+          <div class="payment-item">
+            <div class="item-left">
+              <span class="item-name">租金</span>
+              <span class="expected">¥{{ expectedPayments.rent.toFixed(2) }}</span>
+            </div>
+            <div class="item-right">
+              <a-input-number
+                v-if="selectedPeriod?.status === '待缴' || isEditMode"
+                v-model="actualPayments.rent"
+                :precision="2"
+                :min="0"
+                placeholder="实际租金"
+                size="small"
+              />
+              <span v-else class="actual-amount">¥{{ actualPayments.rent.toFixed(2) }}</span>
+            </div>
+          </div>
+
+        <!-- 水费 -->
+        <div class="payment-item">
+          <div class="item-left">
+            <span class="item-name">水费</span>
+            <span class="expected">¥{{ expectedPayments.water.toFixed(2) }}</span>
+          </div>
+          <div class="item-right">
+            <a-input-number
+              v-if="selectedPeriod?.status === '待缴' || isEditMode"
+              v-model="actualPayments.water"
+              :precision="2"
+              :min="0"
+              placeholder="实际水费"
+              size="small"
+            />
+            <span v-else class="actual-amount">¥{{ actualPayments.water.toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <!-- 水费明细 -->
+        <div class="utility-detail">
+          <div class="detail-row">
+            <span class="detail-label">水费用量：</span>
+            <span class="detail-value">¥4.50/吨 × 27.9吨 = ¥125.30</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">表数信息：</span>
+            <span class="detail-value">起数 125.8 → 止数 153.7</span>
+          </div>
+        </div>
+
+        <!-- 电费 -->
+        <div class="payment-item">
+          <div class="item-left">
+            <span class="item-name">电费</span>
+            <span class="expected">¥{{ expectedPayments.electricity.toFixed(2) }}</span>
+          </div>
+          <div class="item-right">
+            <a-input-number
+              v-if="selectedPeriod?.status === '待缴' || isEditMode"
+              v-model="actualPayments.electricity"
+              :precision="2"
+              :min="0"
+              placeholder="实际电费"
+              size="small"
+            />
+            <span v-else class="actual-amount">¥{{ actualPayments.electricity.toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <!-- 电费明细 -->
+        <div class="utility-detail">
+          <div class="detail-row">
+            <span class="detail-label">电费用量：</span>
+            <span class="detail-value">¥0.68/度 × 287度 = ¥195.20</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">表数信息：</span>
+            <span class="detail-value">起数 1,248 → 止数 1,535</span>
+          </div>
+        </div>
+
+        <!-- 分隔线 -->
+        <a-divider style="margin: 16px 0;" />
+
+        <!-- 合计 -->
+        <div class="payment-item total">
+          <div class="item-left">
+            <span class="item-name">合计</span>
+            <span class="expected">¥{{ totalExpected.toFixed(2) }}</span>
+          </div>
+          <div class="item-right">
+            <span class="difference total-actual">¥{{ totalActual.toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <!-- 备注 -->
+        <div class="notes-section">
+          <div class="notes-label">备注信息：</div>
+          <a-textarea
+            v-if="selectedPeriod?.status === '待缴' || isEditMode"
+            v-model="actualPayments.notes"
+            placeholder="请输入收费备注信息"
+            :auto-size="{ minRows: 2, maxRows: 4 }"
+            size="small"
+          />
+          <div v-else class="notes-content">
+            {{ actualPayments.notes || '暂无备注信息' }}
+          </div>
+          </div>
         </div>
       </div>
     </div>
@@ -233,6 +210,103 @@ const emit = defineEmits<Emits>()
 const loading = ref(false)
 const houseData = ref(props.house)
 
+// 编辑状态管理
+const isEditMode = ref(false)
+
+// 费用周期数据
+const selectedPeriod = ref(null)
+const paymentPeriods = ref([
+  {
+    id: 1,
+    month: '2024年2月',
+    status: '待缴',
+    totalAmount: 2820.50,
+    startDate: '2024-02-01',
+    endDate: '2024-02-29',
+    payments: {
+      rent: 2500.00,
+      water: 125.30,
+      electricity: 195.20
+    }
+  },
+  {
+    id: 2,
+    month: '2024年1月',
+    status: '已缴',
+    totalAmount: 2820.50,
+    startDate: '2024-01-01',
+    endDate: '2024-01-31',
+    payments: {
+      rent: 2500.00,
+      water: 125.30,
+      electricity: 195.20
+    },
+    actualPayments: {
+      rent: 2500.00,
+      water: 125.30,
+      electricity: 195.20,
+      notes: '1月份费用，按时缴纳'
+    }
+  },
+  {
+    id: 3,
+    month: '2023年12月',
+    status: '已缴',
+    totalAmount: 2785.30,
+    startDate: '2023-12-01',
+    endDate: '2023-12-31',
+    payments: {
+      rent: 2500.00,
+      water: 98.60,
+      electricity: 186.70
+    },
+    actualPayments: {
+      rent: 2500.00,
+      water: 98.60,
+      electricity: 186.70,
+      notes: '11月份费用，按时缴纳'
+    }
+  },
+  {
+    id: 4,
+    month: '2023年11月',
+    status: '已缴',
+    totalAmount: 2816.20,
+    startDate: '2023-11-01',
+    endDate: '2023-11-30',
+    payments: {
+      rent: 2500.00,
+      water: 112.40,
+      electricity: 203.80
+    },
+    actualPayments: {
+      rent: 2500.00,
+      water: 112.40,
+      electricity: 203.80,
+      notes: '10月份费用，按时缴纳'
+    }
+  },
+  {
+    id: 5,
+    month: '2023年10月',
+    status: '已缴',
+    totalAmount: 2762.80,
+    startDate: '2023-10-01',
+    endDate: '2023-10-31',
+    payments: {
+      rent: 2500.00,
+      water: 87.20,
+      electricity: 175.60
+    },
+    actualPayments: {
+      rent: 2500.00,
+      water: 87.20,
+      electricity: 175.60,
+      notes: '9月份费用，按时缴纳'
+    }
+  }
+])
+
 // 实际收费金额数据
 const actualPayments = ref({
   rent: 2500.00,
@@ -241,23 +315,28 @@ const actualPayments = ref({
   notes: ''
 })
 
-// 应收金额（固定值）
-const expectedPayments = {
-  rent: 2500.00,
-  water: 125.30,
-  electricity: 195.20
-}
+// 应收金额（根据选中的周期动态计算）
+const expectedPayments = computed(() => {
+  if (!selectedPeriod.value) {
+    return {
+      rent: 2500.00,
+      water: 125.30,
+      electricity: 195.20
+    }
+  }
+  return selectedPeriod.value.payments
+})
 
 // 计算差额
 const paymentDifferences = computed(() => ({
-  rent: actualPayments.value.rent - expectedPayments.rent,
-  water: actualPayments.value.water - expectedPayments.water,
-  electricity: actualPayments.value.electricity - expectedPayments.electricity
+  rent: actualPayments.value.rent - expectedPayments.value.rent,
+  water: actualPayments.value.water - expectedPayments.value.water,
+  electricity: actualPayments.value.electricity - expectedPayments.value.electricity
 }))
 
 // 计算总计
 const totalExpected = computed(() =>
-  expectedPayments.rent + expectedPayments.water + expectedPayments.electricity
+  expectedPayments.value.rent + expectedPayments.value.water + expectedPayments.value.electricity
 )
 
 const totalActual = computed(() =>
@@ -345,10 +424,63 @@ const historyData = [
   }
 ]
 
+// 选择费用周期
+const selectPeriod = (period: any) => {
+  selectedPeriod.value = period
+
+  // 根据周期状态设置编辑模式
+  if (period.status === '已缴') {
+    isEditMode.value = false
+    // 如果是已缴状态，使用已保存的实际收款数据
+    actualPayments.value = period.actualPayments ? { ...period.actualPayments } : {
+      rent: period.payments.rent,
+      water: period.payments.water,
+      electricity: period.payments.electricity,
+      notes: ''
+    }
+  } else {
+    isEditMode.value = true
+    // 如果是待缴状态，使用应收金额作为默认值
+    actualPayments.value = {
+      rent: period.payments.rent,
+      water: period.payments.water,
+      electricity: period.payments.electricity,
+      notes: ''
+    }
+  }
+}
+
+// 切换编辑模式
+const toggleEditMode = () => {
+  isEditMode.value = !isEditMode.value
+}
+
+// 取消编辑
+const cancelEdit = () => {
+  if (selectedPeriod.value && selectedPeriod.value.status === '已缴') {
+    // 恢复原始数据
+    actualPayments.value = selectedPeriod.value.actualPayments ?
+      { ...selectedPeriod.value.actualPayments } : {
+        rent: selectedPeriod.value.payments.rent,
+        water: selectedPeriod.value.payments.water,
+        electricity: selectedPeriod.value.payments.electricity,
+        notes: ''
+      }
+    isEditMode.value = false
+  }
+}
+
 // 监听弹窗显示状态
 watch(() => props.visible, (newVal) => {
   if (newVal) {
     houseData.value = props.house
+    // 默认选择第一个待缴的周期
+    const pendingPeriod = paymentPeriods.value.find(p => p.status === '待缴')
+    if (pendingPeriod) {
+      selectPeriod(pendingPeriod)
+    } else if (paymentPeriods.value.length > 0) {
+      selectPeriod(paymentPeriods.value[0])
+    }
   }
 })
 
@@ -409,249 +541,242 @@ const handleCancel = () => {
 
 <style lang="less" scoped>
 .payment-modal-container {
-  .payment-header {
-    margin-bottom: 20px;
-    padding: 16px;
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    border-radius: 8px;
+  // 左右两列布局
+  .payment-layout {
+    display: flex;
+    gap: 32px;
+    min-height: 600px;
 
-    .house-info {
-      display: flex;
-      align-items: center;
+    // 左侧费用周期列表
+    .period-sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      border-right: 1px solid #f0f0f0;
+      padding-right: 24px;
+      overflow-y: auto;
 
-      .header-icon {
-        font-size: 24px;
-        color: #1890ff;
-        margin-right: 12px;
-      }
+      .sidebar-header {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f0f0;
 
-      .house-details {
-        h3 {
-          margin: 0 0 4px 0;
-          font-size: 18px;
-          font-weight: 600;
-          color: #1a1a1a;
-        }
-
-        p {
-          margin: 0;
-          font-size: 14px;
-          color: #666;
-        }
-      }
-    }
-  }
-
-  .payment-content {
-    .payment-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-
-      .label {
-        color: #666;
-        font-weight: 500;
-      }
-
-      .amount {
-        font-weight: 600;
-        color: #1890ff;
-
-        &.water {
-          color: #1890ff;
-        }
-
-        &.electricity {
-          color: #faad14;
-        }
-      }
-
-      &.total {
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid #f0f0f0;
-
-        .label {
-          font-weight: 600;
-          color: #1a1a1a;
-        }
-
-        .total-amount {
+        .header-title {
           font-size: 16px;
-          color: #f5222d;
+          font-weight: 600;
+          color: #1a1a1a;
+        }
+      }
+
+      .period-list {
+        .period-item {
+          padding: 12px;
+          margin-bottom: 8px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: 1px solid #f0f0f0;
+
+          &:hover {
+            background: #f8f9fa;
+            border-color: #e0e0e0;
+          }
+
+          &.active {
+            background: #e6f7ff;
+            border-color: #1890ff;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+          }
+
+          .period-month {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+          }
+
+          .period-status {
+            margin-bottom: 6px;
+          }
+
+          .period-amount {
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+            text-align: right;
+          }
         }
       }
     }
 
-    .payment-detail {
-      margin-left: 45px;
-      margin-bottom: 12px;
-      padding: 8px 12px;
-      background: #f8f9fa;
-      border-radius: 6px;
-      border-left: 3px solid;
+    // 右侧收款管理内容区域
+    .payment-content {
+      flex: 1;
+      overflow: hidden;
+      padding-left: 32px;
+      max-width: 100%;
+      box-sizing: border-box;
 
-      &.water-detail {
-        border-left-color: #1890ff;
-        background: #f0f9ff;
-      }
-
-      &.electricity-detail {
-        border-left-color: #faad14;
-        background: #fffbe6;
-      }
-
-      .detail-item {
+      .content-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 4px;
-        font-size: 12px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f0f0;
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .current-period {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+          }
+
+          .period-status-text {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+          }
+        }
+
+        .header-right {
+          display: flex;
+          align-items: center;
+        }
+      }
+
+      // 简化的收费项目样式
+      .payment-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid #f0f0f0;
 
         &:last-child {
-          margin-bottom: 0;
+          border-bottom: none;
         }
 
-        .detail-label {
-          color: #666;
-          font-weight: 400;
-        }
-
-        .detail-value {
-          color: #333;
-          font-weight: 500;
-        }
-      }
-    }
-
-    .payment-status {
-      text-align: center;
-      margin-bottom: 16px;
-
-      .status-desc {
-        margin: 8px 0 0 0;
-        color: #666;
-        font-size: 12px;
-      }
-    }
-
-    .payment-actions {
-      display: flex;
-      justify-content: center;
-    }
-
-    .actual-payment-input {
-      margin-top: 16px;
-      padding: 12px;
-      background: #fafafa;
-      border-radius: 6px;
-      border: 1px solid #f0f0f0;
-
-      .input-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-
-        .input-label {
-          width: 60px;
-          font-size: 12px;
-          color: #666;
-          font-weight: 500;
-        }
-
-        .input-content {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-
-          .expected-amount {
-            font-size: 12px;
-            color: #999;
-          }
-
-          .difference {
-            font-size: 12px;
-            font-weight: 500;
-
-            &.positive {
-              color: #f5222d;
-            }
-
-            &.negative {
-              color: #52c41a;
-            }
-          }
-        }
-      }
-
-      .input-total {
-        display: flex;
-        align-items: center;
-        margin: 12px 0 8px 0;
-        padding-top: 8px;
-        border-top: 1px solid #e8e8e8;
-
-        .total-label {
-          width: 60px;
-          font-size: 12px;
-          color: #333;
+        &.total {
+          padding: 16px;
           font-weight: 600;
-        }
+          background: #fafafa;
 
-        .total-content {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          gap: 12px;
+          .item-left .item-name {
+            font-size: 16px;
+            font-weight: 700;
+          }
 
-          .actual-total {
-            font-size: 14px;
+          .item-left .expected {
+            font-size: 16px;
             font-weight: 600;
+          }
+
+          .item-right .total-actual {
+            font-size: 16px;
+            font-weight: 700;
             color: #1890ff;
           }
+        }
 
-          .expected-total {
-            font-size: 12px;
-            color: #999;
+        .item-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .item-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a1a;
+            min-width: 60px;
           }
 
-          .total-difference {
+          .expected {
             font-size: 14px;
+            color: #666;
+            font-weight: 500;
+          }
+        }
+
+        .item-right {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+
+          .arco-input-number {
+            width: 200px;
+          }
+
+          .actual-amount {
+            font-size: 16px;
             font-weight: 600;
-
-            &.positive {
-              color: #f5222d;
-            }
-
-            &.negative {
-              color: #52c41a;
-            }
+            color: #1890ff;
+            min-width: 120px;
+            text-align: right;
           }
         }
       }
 
-      .notes-item {
-        display: flex;
-        margin-top: 8px;
+      // 水电用量明细样式
+      .utility-detail {
+        background: #f8f9fa;
+        padding: 16px;
+        border-radius: 6px;
+        margin: 12px 0 20px 0;
+        font-size: 13px;
+        width: 100%;
+        box-sizing: border-box;
+
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+          width: 100%;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .detail-label {
+            font-weight: 500;
+            color: #666;
+          }
+
+          .detail-value {
+            color: #333;
+            font-weight: 500;
+          }
+        }
+      }
+
+      // 备注区域样式
+      .notes-section {
+        margin-top: 20px;
 
         .notes-label {
-          width: 60px;
-          font-size: 12px;
-          color: #666;
+          font-size: 14px;
           font-weight: 500;
-          padding-top: 4px;
+          color: #1a1a1a;
+          margin-bottom: 8px;
         }
 
-        .arco-textarea-wrapper {
-          flex: 1;
+        .notes-content {
+          padding: 12px 16px;
+          background: #f8f9fa;
+          border-radius: 6px;
+          border: 1px solid #f0f0f0;
+          font-size: 14px;
+          color: #333;
+          line-height: 1.5;
+          min-height: 60px;
+          display: flex;
+          align-items: center;
         }
       }
-    }
-
-    .payment-history {
-      margin-top: 20px;
     }
   }
 }
