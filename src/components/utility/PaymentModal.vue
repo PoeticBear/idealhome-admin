@@ -96,7 +96,7 @@
               <div class="period-month">{{ period.month }}</div>
               <div class="period-status">
                 <a-tag
-                  :color="period.status === '已缴' ? 'green' : period.status === '待缴' ? 'orange' : 'gray'"
+                  :color="period.status === '已缴' ? 'green' : period.status === '待缴' ? 'orange' : period.status === '逾期' ? 'red' : 'gray'"
                   size="small"
                 >
                   {{ period.status }}
@@ -114,7 +114,7 @@
               <span class="current-period">{{ selectedPeriod?.month || '选择周期' }}</span>
               <span class="period-status-text">{{ selectedPeriod?.status || '未选择' }}</span>
             </div>
-            <div class="header-right" v-if="selectedPeriod && selectedPeriod.status === '已缴'">
+            <div class="header-right" v-if="selectedPeriod && (selectedPeriod.status === '已缴' || selectedPeriod.status === '逾期')">
               <a-button
                 v-if="!isEditMode"
                 type="outline"
@@ -141,7 +141,7 @@
             </div>
             <div class="item-right">
               <a-input-number
-                v-if="selectedPeriod?.status === '待缴' || isEditMode"
+                v-if="selectedPeriod?.status === '待缴' || selectedPeriod?.status === '逾期' || isEditMode"
                 v-model="actualPayments.rent"
                 :precision="2"
                 :min="0"
@@ -163,7 +163,7 @@
           </div>
           <div class="item-right">
             <a-input-number
-              v-if="selectedPeriod?.status === '待缴' || isEditMode"
+              v-if="selectedPeriod?.status === '待缴' || selectedPeriod?.status === '逾期' || isEditMode"
               v-model="actualPayments.water"
               :precision="2"
               :min="0"
@@ -197,7 +197,7 @@
           </div>
           <div class="item-right">
             <a-input-number
-              v-if="selectedPeriod?.status === '待缴' || isEditMode"
+              v-if="selectedPeriod?.status === '待缴' || selectedPeriod?.status === '逾期' || isEditMode"
               v-model="actualPayments.electricity"
               :precision="2"
               :min="0"
@@ -241,7 +241,7 @@
         <div class="notes-section">
           <div class="notes-label">备注信息：</div>
           <a-textarea
-            v-if="selectedPeriod?.status === '待缴' || isEditMode"
+            v-if="selectedPeriod?.status === '待缴' || selectedPeriod?.status === '逾期' || isEditMode"
             v-model="actualPayments.notes"
             placeholder="请输入收费备注信息"
             :auto-size="{ minRows: 2, maxRows: 4 }"
@@ -343,7 +343,7 @@ const paymentPeriods = ref([
   {
     id: 4,
     month: '2023年11月',
-    status: '已缴',
+    status: '逾期',
     totalAmount: 2816.20,
     startDate: '2023-11-01',
     endDate: '2023-11-30',
@@ -353,10 +353,10 @@ const paymentPeriods = ref([
       electricity: 203.80
     },
     actualPayments: {
-      rent: 2500.00,
-      water: 112.40,
-      electricity: 203.80,
-      notes: '10月份费用，按时缴纳'
+      rent: 0,
+      water: 0,
+      electricity: 0,
+      notes: '11月份费用，尚未缴纳'
     }
   },
   {
@@ -423,6 +423,7 @@ const statisticsData = computed(() => {
   const totalPeriods = paymentPeriods.value.length
   const paidPeriods = paymentPeriods.value.filter(p => p.status === '已缴').length
   const pendingPeriods = paymentPeriods.value.filter(p => p.status === '待缴').length
+  const overduePeriods = paymentPeriods.value.filter(p => p.status === '逾期').length
 
   const totalReceivable = paymentPeriods.value.reduce((sum, period) => sum + period.totalAmount, 0)
   const totalReceived = paymentPeriods.value
@@ -441,7 +442,8 @@ const statisticsData = computed(() => {
     collectionRate,
     totalPeriods,
     paidPeriods,
-    pendingPeriods
+    pendingPeriods,
+    overduePeriods
   }
 })
 
@@ -539,13 +541,13 @@ const selectPeriod = (period: any) => {
       notes: ''
     }
   } else {
+    // 如果是待缴或逾期状态，使用应收金额作为默认值，并开启编辑模式
     isEditMode.value = true
-    // 如果是待缴状态，使用应收金额作为默认值
     actualPayments.value = {
       rent: period.payments.rent,
       water: period.payments.water,
       electricity: period.payments.electricity,
-      notes: ''
+      notes: period.status === '逾期' ? '逾期未缴费' : ''
     }
   }
 }
@@ -557,14 +559,14 @@ const toggleEditMode = () => {
 
 // 取消编辑
 const cancelEdit = () => {
-  if (selectedPeriod.value && selectedPeriod.value.status === '已缴') {
+  if (selectedPeriod.value && (selectedPeriod.value.status === '已缴' || selectedPeriod.value.status === '逾期')) {
     // 恢复原始数据
     actualPayments.value = selectedPeriod.value.actualPayments ?
       { ...selectedPeriod.value.actualPayments } : {
         rent: selectedPeriod.value.payments.rent,
         water: selectedPeriod.value.payments.water,
         electricity: selectedPeriod.value.payments.electricity,
-        notes: ''
+        notes: selectedPeriod.value.status === '逾期' ? '逾期未缴费' : ''
       }
     isEditMode.value = false
   }
