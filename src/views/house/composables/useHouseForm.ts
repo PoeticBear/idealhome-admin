@@ -1,6 +1,6 @@
 import { ref, reactive, nextTick } from 'vue';
 import { Message } from '@arco-design/web-vue';
-import { DEFAULT_FORM_VALUES } from '../constants/form';
+import { DEFAULT_FORM_VALUES, TEST_HOUSE_DATA } from '../constants/form';
 import { validateHouseForm } from '../utils/validators';
 import { useLocationData } from './useLocationData';
 
@@ -46,7 +46,10 @@ export function useHouseForm() {
     loadCityData,
     loadDistrictData,
     smartMatchLocation,
-    clearLocationData
+    clearLocationData,
+    getProvinceNameById,
+    getCityNameById,
+    getDistrictNameById
   } = useLocationData();
 
   // 表单显示状态
@@ -71,8 +74,27 @@ export function useHouseForm() {
       (addForm as any)[key] = (DEFAULT_FORM_VALUES.HOUSE_FORM as any)[key];
     });
 
+    // 填充测试数据（开发环境）
+    const isDev = import.meta.env.DEV;
+    if (isDev) {
+      Object.keys(TEST_HOUSE_DATA.HOUSE_FORM).forEach(key => {
+        (addForm as any)[key] = (TEST_HOUSE_DATA.HOUSE_FORM as any)[key];
+      });
+
+      // 加载省市区数据
+      setTimeout(() => {
+        loadCityData(TEST_HOUSE_DATA.HOUSE_FORM.province);
+        setTimeout(() => {
+          loadDistrictData(TEST_HOUSE_DATA.HOUSE_FORM.city);
+        }, 100);
+      }, 100);
+    }
+
     // 清空省市区选择器数据
-    clearLocationData('city');
+    if (!isDev) {
+      clearLocationData('city');
+    }
+
     showAddModal.value = true;
   };
 
@@ -229,8 +251,11 @@ export function useHouseForm() {
 
       // 省市区信息
       provinceId: formData.province ? Number(formData.province) : null,
+      provinceName: formData.province ? getProvinceNameById(formData.province) : '',
       cityId: formData.city ? Number(formData.city) : null,
+      cityName: formData.city ? getCityNameById(formData.city) : '',
       areaId: formData.district ? Number(formData.district) : null,
+      areaName: formData.district ? getDistrictNameById(formData.district) : '',
 
       // 租金信息
       price: formData.price ? Number(formData.price) : 0,

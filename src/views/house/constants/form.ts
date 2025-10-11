@@ -109,6 +109,37 @@ export const DEFAULT_FORM_VALUES = {
   }
 };
 
+// 测试数据常量
+export const TEST_HOUSE_DATA = {
+  // 房屋测试数据 - 用于开发和测试
+  HOUSE_FORM: {
+    name: '测试公寓-阳光花园',
+    roomNumber: 'A-1203',
+    area: 85,
+    floor: '12',
+    layoutType: 3, // 三房一厅
+    province: '110000', // 北京市
+    city: '110100', // 北京市
+    district: '110105', // 朝阳区
+    addresInfo: '阳光花园小区12号楼1203室',
+    toilet: 1, // 独立卫生间
+    kitchen: 1, // 独立厨房
+    balcony: 1, // 有阳台
+    toward: 3, // 南向
+    lighting: '采光充足，南北通透，通风良好',
+    status: 1, // 待租
+    price: 3500, // 实际租金
+    fakePrice: 3800, // 对外租金
+    depositNumber: 1, // 押金1个月
+    priceNumber: 3, // 每3个月付一次
+    waterFee: 50, // 水费
+    electricityFee: 100, // 电费
+    internetFee: 80, // 网费
+    fuelFee: 30, // 燃气费
+    note: '精装修，家电齐全，拎包入住，适合家庭居住'
+  }
+};
+
 // 表单布局配置
 export const FORM_LAYOUT = {
   LABEL_WIDTH: '100px',

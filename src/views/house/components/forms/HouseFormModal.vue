@@ -58,20 +58,28 @@
             </a-card>
 
             <!-- 位置信息 -->
-            <LocationSelector
-              :province-value="formData.province"
-              :city-value="formData.city"
-              :district-value="formData.district"
-              :province-list="provinceList"
-              :city-list="cityList"
-              :district-list="districtList"
-              :loading="cityCodeLoading"
-              @update:province-value="formData.province = $event"
-              @update:city-value="formData.city = $event"
-              @update:district-value="formData.district = $event"
-              @province-change="$emit('provinceChange', $event)"
-              @city-change="$emit('cityChange', $event)"
-            />
+            <a-card :bordered="false" class="info-section compact">
+              <template #title>
+                <icon-location /> 位置信息
+              </template>
+              <LocationSelector
+                :province-value="formData.province"
+                :city-value="formData.city"
+                :district-value="formData.district"
+                :province-list="provinceList"
+                :city-list="cityList"
+                :district-list="districtList"
+                :loading="cityCodeLoading"
+                @update:province-value="formData.province = $event"
+                @update:city-value="formData.city = $event"
+                @update:district-value="formData.district = $event"
+                @province-change="$emit('provinceChange', $event)"
+                @city-change="$emit('cityChange', $event)"
+              />
+              <a-form-item label="详细地址" field="addresInfo">
+                <a-input v-model="formData.addresInfo" placeholder="请输入详细地址" />
+              </a-form-item>
+            </a-card>
 
             <!-- 设施配置 -->
             <a-card :bordered="false" class="info-section compact">
