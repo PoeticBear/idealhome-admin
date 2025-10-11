@@ -18,6 +18,12 @@
           </template>
           收支详情
         </a-button>
+        <a-button @click="handleShowBatchUtilityModal">
+          <template #icon>
+            <icon-thunderbolt />
+          </template>
+          批量水电录入
+        </a-button>
       </div>
       <div class="operations-right">
         <ViewModeToggle
@@ -55,7 +61,6 @@
             @view-tenant="handleShowTenantDetailModal"
             @payment="handlePaymentManagement"
             @utility="handleShowUtilityModal"
-            @batch-utility="handleShowBatchUtilityModal"
           />
         </a-col>
       </a-row>
@@ -96,6 +101,7 @@
       :city-code-loading="cityCodeLoading"
       @update:visible="showAddModal = $event"
       @confirm="saveAdd"
+      @cancel="cancelAdd"
       @province-change="handleProvinceChange"
       @city-change="handleCityChange"
     />
@@ -112,6 +118,7 @@
       :city-code-loading="cityCodeLoading"
       @update:visible="showEditModal = $event"
       @confirm="saveEdit"
+      @cancel="cancelEdit"
       @province-change="(value) => handleProvinceChange(value, true)"
       @city-change="(value) => handleCityChange(value, true)"
     />
@@ -408,6 +415,30 @@ onMounted(() => {
   align-items: center;
   padding: 0 4px;
 
+  .operations-left {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+
+    .arco-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      min-width: 120px; // 设置最小宽度确保按钮排列整齐
+      justify-content: center;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(var(--color-primary-6), 0.2);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+
   .arco-btn {
     display: flex;
     align-items: center;
@@ -450,12 +481,43 @@ onMounted(() => {
 // 响应式布局
 @media (max-width: 768px) {
   .table-operations {
+    flex-direction: column;
+    gap: 12px;
     justify-content: center;
     margin-bottom: 12px;
 
-    .arco-btn {
+    .operations-left {
       width: 100%;
       justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      .arco-btn {
+        min-width: 100px;
+        flex: 1;
+        max-width: 140px;
+      }
+    }
+
+    .operations-right {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .arco-btn {
+      justify-content: center;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .table-operations {
+    .operations-left {
+      .arco-btn {
+        min-width: 90px;
+        font-size: 13px;
+        padding: 4px 8px;
+      }
     }
   }
 }

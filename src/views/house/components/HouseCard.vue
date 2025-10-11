@@ -1,10 +1,16 @@
 <template>
-  <a-card class="house-card" :hoverable="true">
+  <a-card class="house-card" :hoverable="true" :class="`status-${house.status}`">
     <template #cover>
       <div class="card-cover">
-        <div class="house-image-placeholder">
-          <icon-home size="36" />
-          <span class="placeholder-text">暂无图片</span>
+        <!-- 状态徽章 -->
+        <div class="status-badge">
+          <component :is="getStatusIcon(house.status)" size="16" />
+        </div>
+
+        <!-- 状态文字标识 -->
+        <div class="status-text-center">
+          <component :is="getStatusIcon(house.status)" size="32" />
+          <span>{{ getStatusInfo(house.status).label }}</span>
         </div>
 
         <!-- 悬浮操作按钮 -->
@@ -58,19 +64,12 @@
 
       <!-- 底部信息区域 -->
       <div class="bottom-section">
-        <!-- 地区和状态 -->
-        <div class="location-status-row">
+        <!-- 地区信息 -->
+        <div class="location-row">
           <div class="location-info">
             <icon-location class="info-icon" />
             <span>{{ house.location }}</span>
           </div>
-          <a-tag
-            :color="getStatusInfo(house.status).color"
-            size="small"
-            class="status-tag"
-          >
-            {{ getStatusInfo(house.status).label }}
-          </a-tag>
         </div>
 
         <!-- 操作按钮区域 -->
@@ -117,23 +116,17 @@
           </div>
 
           <!-- 水电录入按钮（所有状态显示） -->
-          <div class="action-group utility-actions">
+          <div class="action-group">
             <a-button
-              type="text"
+              type="outline"
               size="mini"
-              class="utility-btn"
+              class="action-btn-small"
               @click="$emit('utility', house)"
             >
-              <icon-thunderbolt />
-            </a-button>
-            <a-button
-              type="text"
-              size="mini"
-              class="utility-btn"
-              @click="$emit('batchUtility')"
-            >
-              <icon-thunderbolt />
-              <span>批量</span>
+              <template #icon>
+                <icon-thunderbolt />
+              </template>
+              水电录入
             </a-button>
           </div>
         </div>
@@ -143,6 +136,7 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue';
 import { getStatusInfo } from '../utils/formatters';
 
 interface Props {
@@ -158,43 +152,146 @@ defineEmits<{
   viewTenant: [house: any];
   payment: [house: any];
   utility: [house: any];
-  batchUtility: [];
 }>();
+
+// 获取状态图标
+const getStatusIcon = (status: number) => {
+  switch (status) {
+    case 1: // 待租
+      return 'icon-check-circle';
+    case 2: // 已租
+      return 'icon-user';
+    default: // 其他状态
+      return 'icon-minus-circle';
+  }
+};
 </script>
 
 <style scoped lang="scss">
 .house-card {
+  // 定义状态主题色变量
+  --status-available-primary: #60a5fa; // 浅蓝色 - 未出租
+  --status-available-secondary: #3b82f6;
+  --status-rented-primary: #10b981; // 绿色 - 已出租
+  --status-rented-secondary: #059669;
+  --status-other-primary: #6b7280; // 灰色 - 其他状态
+  --status-other-secondary: #4b5563;
   margin-bottom: 16px;
   width: 100%;
-  height: 360px; // 增加固定高度
+  height: 380px; // 增加固定高度，确保内容完整显示
   transition: all 0.3s ease;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   }
 
+  // 状态背景色 - 使用 :deep() 穿透 Arco Design 样式
+  &.status-1 {
+    :deep(.arco-card-cover) {
+      background: linear-gradient(135deg, var(--status-available-primary) 0%, var(--status-available-secondary) 100%) !important;
+    }
+    .card-cover {
+      background: linear-gradient(135deg, var(--status-available-primary) 0%, var(--status-available-secondary) 100%);
+    }
+  }
+
+  &.status-2 {
+    :deep(.arco-card-cover) {
+      background: linear-gradient(135deg, var(--status-rented-primary) 0%, var(--status-rented-secondary) 100%) !important;
+    }
+    .card-cover {
+      background: linear-gradient(135deg, var(--status-rented-primary) 0%, var(--status-rented-secondary) 100%);
+    }
+  }
+
+  &.status-3 {
+    :deep(.arco-card-cover) {
+      background: linear-gradient(135deg, var(--status-other-primary) 0%, var(--status-other-secondary) 100%) !important;
+    }
+    .card-cover {
+      background: linear-gradient(135deg, var(--status-other-primary) 0%, var(--status-other-secondary) 100%);
+    }
+  }
+
   .card-cover {
-    height: 130px; // 增加顶部区域高度
+    height: 120px; // 调整顶部区域高度
     overflow: hidden;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    flex-shrink: 0;
     position: relative;
 
-    .house-image-placeholder {
+    // 状态文字标识（居中显示）
+    .status-text-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: rgba(255, 255, 255, 0.8);
+      gap: 8px;
 
-      .placeholder-text {
-        margin-top: 4px;
-        font-size: 12px;
-        font-weight: 400;
+      span {
+        font-size: 18px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.95);
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      // 状态图标样式
+      :deep(.arco-icon) {
+        color: rgba(255, 255, 255, 0.95);
+        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+      }
+    }
+
+    // 状态徽章
+    .status-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+
+      // 根据状态设置徽章颜色
+      .house-card.status-1 & {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: var(--status-available-primary);
+
+        :deep(.arco-icon) {
+          color: var(--status-available-primary);
+        }
+      }
+
+      .house-card.status-2 & {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: var(--status-rented-primary);
+
+        :deep(.arco-icon) {
+          color: var(--status-rented-primary);
+        }
+      }
+
+      .house-card.status-3 & {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: var(--status-other-primary);
+
+        :deep(.arco-icon) {
+          color: var(--status-other-primary);
+        }
       }
     }
 
@@ -268,11 +365,12 @@ defineEmits<{
 
   // 卡片内容区
   .card-content {
-    height: 230px; // 增加内容区域高度
+    flex: 1; // 使用剩余空间
+    min-height: 0; // 允许内容收缩
     padding: 14px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    overflow: hidden; // 防止内容溢出
   }
 
   // 标题区域
@@ -339,12 +437,13 @@ defineEmits<{
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 112px;
+    min-height: 0; // 移除最小高度限制，允许自适应
+    overflow: hidden; // 防止内容溢出
 
-    // 地区和状态行
-    .location-status-row {
+    // 地区信息行
+    .location-row {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       padding-bottom: 8px;
       border-bottom: 1px solid var(--color-border-2);
@@ -353,9 +452,8 @@ defineEmits<{
         display: flex;
         align-items: center;
         gap: 3px;
-        flex: 1;
-        min-width: 0;
-        margin-right: 8px;
+        width: 100%;
+        justify-content: center;
 
         .info-icon {
           font-size: 14px;
@@ -369,16 +467,8 @@ defineEmits<{
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          text-align: center;
         }
-      }
-
-      .status-tag {
-        flex-shrink: 0;
-        font-weight: 600;
-        font-size: 12px;
-        padding: 2px 8px;
-        height: auto;
-        line-height: 1.4;
       }
     }
 
@@ -413,30 +503,6 @@ defineEmits<{
             }
           }
         }
-
-        &.utility-actions {
-          .utility-btn {
-            height: 28px;
-            padding: 0 8px;
-            font-size: 13px;
-            color: var(--color-text-3);
-            background: transparent;
-            border: none;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-
-            &:hover {
-              background: var(--color-fill-2);
-              color: var(--color-primary-6);
-            }
-
-            span {
-              font-size: 12px;
-            }
-          }
-        }
       }
     }
   }
@@ -445,11 +511,12 @@ defineEmits<{
 // 响应式设计
 @media (max-width: 768px) {
   .house-card {
-    height: 320px; // 移动端适当调整高度
+    height: 340px; // 移动端适当调整高度
     margin-bottom: 12px;
 
     .card-cover {
-      height: 110px;
+      height: 100px; // 调整顶部区域高度
+      flex-shrink: 0;
 
       .card-actions {
         top: 6px;
@@ -466,15 +533,20 @@ defineEmits<{
         }
       }
 
-      .house-image-placeholder {
-        .placeholder-text {
-          font-size: 10px;
+      .status-text-center {
+        span {
+          font-size: 16px;
+        }
+
+        :deep(.arco-icon) {
+          font-size: 28px;
         }
       }
     }
 
     .card-content {
-      height: 210px;
+      flex: 1; // 使用剩余空间
+      min-height: 0;
       padding: 12px;
     }
 
@@ -513,16 +585,11 @@ defineEmits<{
     .bottom-section {
       min-height: 106px;
 
-      .location-status-row {
+      .location-row {
         .location-info {
           span {
             font-size: 12px;
           }
-        }
-
-        .status-tag {
-          font-size: 11px;
-          padding: 2px 6px;
         }
       }
 
@@ -535,18 +602,6 @@ defineEmits<{
             height: 26px;
             padding: 0 8px;
           }
-
-          &.utility-actions {
-            .utility-btn {
-              height: 26px;
-              padding: 0 6px;
-              font-size: 12px;
-
-              span {
-                font-size: 11px;
-              }
-            }
-          }
         }
       }
     }
@@ -555,10 +610,11 @@ defineEmits<{
 
 @media (max-width: 480px) {
   .house-card {
-    height: 300px;
+    height: 320px; // 增加高度以容纳内容
 
     .card-cover {
-      height: 100px;
+      height: 90px; // 进一步调整顶部区域高度
+      flex-shrink: 0;
 
       .card-actions {
         .action-btn {
@@ -570,10 +626,30 @@ defineEmits<{
           }
         }
       }
+
+      .status-badge {
+        width: 28px;
+        height: 28px;
+
+        :deep(.arco-icon) {
+          font-size: 14px;
+        }
+      }
+
+      .status-text-center {
+        span {
+          font-size: 14px;
+        }
+
+        :deep(.arco-icon) {
+          font-size: 24px;
+        }
+      }
     }
 
     .card-content {
-      height: 200px;
+      flex: 1; // 使用剩余空间
+      min-height: 0;
       padding: 10px;
     }
 
@@ -610,15 +686,11 @@ defineEmits<{
     .bottom-section {
       min-height: 102px;
 
-      .location-status-row {
+      .location-row {
         .location-info {
           span {
             font-size: 11px;
           }
-        }
-
-        .status-tag {
-          font-size: 10px;
         }
       }
 
@@ -630,17 +702,6 @@ defineEmits<{
             font-size: 11px;
             height: 24px;
             padding: 0 6px;
-          }
-
-          &.utility-actions {
-            .utility-btn {
-              height: 24px;
-              font-size: 11px;
-
-              span {
-                font-size: 10px;
-              }
-            }
           }
         }
       }
